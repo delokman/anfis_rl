@@ -1,13 +1,16 @@
 import math
 
+import rospy
 import torch
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
 
 class Jackal:
     def __init__(self):
         self.dtype = torch.float
 
-        self.linear_velocity = 1.5
+        self._linear_velocity = 1.5
         self.x = 0.0
         self.y = 0.0
         self.q1 = 0.0
@@ -15,7 +18,7 @@ class Jackal:
         self.q3 = 0.0
         self.q4 = 0.0
         self.current_angle = 0.0
-        self.control_law = 0.0
+        self._control_law = 0.0
 
         self.batch_size = 128
 
@@ -23,6 +26,24 @@ class Jackal:
 
     def get_pose(self):
         return self.x, self.y
+
+    @property
+    def linear_velocity(self):
+        return self._linear_velocity
+
+    @linear_velocity.setter
+    def linear_velocity(self, new_v):
+        self._linear_velocity = new_v
+        self.twist.linear.x = self._linear_velocity
+
+    @property
+    def control_law(self):
+        return self._linear_velocity
+
+    @control_law.setter
+    def control_law(self, new_v):
+        self._control_law = new_v
+        self.twist.angular.z = self._control_law
 
     def callback(self, msg):
         self.x = msg.pose.pose.position.x
