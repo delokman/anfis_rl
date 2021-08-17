@@ -8,7 +8,7 @@ class Path:
         self.path_length = len(self.path) - 1
         self.path_count = 0
 
-    def get_target(self, robot):
+    def get_trajectory(self, robot):
         pos_x, pos_y = robot.get_pose()
 
         current_point = np.array(self.path[self.path_count])
@@ -41,4 +41,4 @@ class Path:
             tar = np.array(self.path[self.path_count + 1])
             future = np.array(self.path[self.path_count + 2])
 
-        return curr, tar, future
+        return curr, tar, future, self.stop
