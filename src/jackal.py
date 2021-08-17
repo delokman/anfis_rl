@@ -24,6 +24,12 @@ class Jackal:
 
         self.robot_path = []
 
+        self.sub = rospy.Subscriber("/odometry/filtered", Odometry, self.callback)
+        self.pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+        self.stop = False
+
+        self.twist = Twist()
+
     def get_pose(self):
         return self.x, self.y
 
@@ -45,6 +51,9 @@ class Jackal:
         self._control_law = new_v
         self.twist.angular.z = self._control_law
 
+    def pub_motion(self):
+        self.pub.publish(self.twist)
+
     def callback(self, msg):
         self.x = msg.pose.pose.position.x
         self.y = msg.pose.pose.position.y
@@ -58,3 +67,9 @@ class Jackal:
         if not self.stop:
             self.robot_path.append([self.x, self.y])
         print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
+
+    def wait_for_publisher(self):
+        while not rospy.is_shutdown():
+            # Wait until publisher gets connected
+            while not self.pub.get_num_connections() == 1:
+                print(self.pub.get_num_connections())
