@@ -23,10 +23,12 @@ def call_service(service_name, service_type, data):
     except rospy.ServiceException as e:
         print("Service call failed: %s" % e)
 
+
 def reset_world():
     call_service('/gazebo/reset_world', Empty, [])
     call_service('/set_pose', SetPose, [])
     rospy.sleep(2)
+
 
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
