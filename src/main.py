@@ -53,6 +53,7 @@ if __name__ == '__main__':
 
     batch_size = 64
     done = False
+    max_yaw_rate = 4
 
     while not rospy.is_shutdown():
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
@@ -68,10 +69,10 @@ if __name__ == '__main__':
         control_law = agent.get_action(path_errors)
         control_law = control_law.item()
 
-        if control_law > 4.:
-            control_law = 4.
-        if control_law < -4.:
-            control_law = -4.
+        if control_law > max_yaw_rate:
+            control_law = max_yaw_rate
+        if control_law < -max_yaw_rate:
+            control_law = -max_yaw_rate
 
         jackal.control_law = control_law
 
