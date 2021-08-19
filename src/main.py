@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rospy
 from std_srvs.srv import Empty
+from robot_localization.srv import SetPose
 
 from jackal import Jackal
 from path import Path
@@ -13,17 +14,19 @@ from rl.utils import fuzzy_error, reward
 from test_course import test_course
 
 
-def call_empty_service(service_name):
+def call_service(service_name, service_type, data):
+    print(service_name)
     rospy.wait_for_service(service_name)
     try:
-        service = rospy.ServiceProxy(service_name, Empty)
-        service()
+        service = rospy.ServiceProxy(service_name, service_type)
+        service(*data)
     except rospy.ServiceException as e:
         print("Service call failed: %s" % e)
 
 def reset_world():
-    call_empty_service('/gazebo/reset_world')
-    call_empty_service('/set_pose')
+    call_service('/gazebo/reset_world', Empty, [])
+    call_service('/set_pose', SetPose, [])
+    rospy.sleep(2)
 
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
