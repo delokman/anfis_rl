@@ -41,4 +41,6 @@ class Path:
             tar = np.array(self.path[self.path_count + 1])
             future = np.array(self.path[self.path_count + 2])
 
+        jackal.stop = self.stop
+
         return curr, tar, future, self.stop
