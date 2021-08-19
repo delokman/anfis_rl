@@ -54,6 +54,9 @@ class Jackal:
     def pub_motion(self):
         self.pub.publish(self.twist)
 
+    def get_angle(self):
+        return self.current_angle
+
     def callback(self, msg):
         self.x = msg.pose.pose.position.x
         self.y = msg.pose.pose.position.y
