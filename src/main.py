@@ -22,7 +22,8 @@ def call_empty_service(service_name):
         print("Service call failed: %s" % e)
 
 def reset_world():
-    call_empty_service('')
+    call_empty_service('/gazebo/reset_world')
+    call_empty_service('/set_pose')
 
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
