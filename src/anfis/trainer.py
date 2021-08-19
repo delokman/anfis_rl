@@ -9,8 +9,12 @@ from anfis.anfis import JointAnfisNet
 from anfis.consequent_layer import ConsequentLayerType
 from anfis.utils import plot_fuzzy_variables, plot_fuzzy_consequent, plot_fuzzy_membership_functions, calc_error, \
     plot_summary_results, save_fuzzy_membership_functions
-from vizualize.auto_grad_viz import get_gradient_values
-from vizualize.auto_grad_viz import make_dot
+
+try:
+    from vizualize.auto_grad_viz import get_gradient_values
+    from vizualize.auto_grad_viz import make_dot
+except ModuleNotFoundError:
+    print("Unable to use Graph visualization")
 
 
 def profile_model(log_dir, model, data, optimizer, criterion, wait=1, warm_up=1, active=5, repeat=2):

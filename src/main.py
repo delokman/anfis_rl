@@ -5,6 +5,7 @@ import rospy
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
+from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course
 
@@ -28,6 +29,9 @@ if __name__ == '__main__':
     agent = DDPGAgent(3, 1, predefined_anfis_model())
 
     distance_errors = []
+
+    batch_size = 64
+    done = False
 
     while not rospy.is_shutdown():
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
