@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
         #   for ddpg model
         control_law = agent.get_action(path_errors)
-        control_law = control_law.item() * 8.
+        control_law = control_law.item()
 
         if control_law > 4.:
             control_law = 4.
