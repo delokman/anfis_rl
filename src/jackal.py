@@ -75,4 +75,6 @@ class Jackal:
         while not rospy.is_shutdown():
             # Wait until publisher gets connected
             while not self.pub.get_num_connections() == 1:
-                print(self.pub.get_num_connections())
+                print("Connections", self.pub.get_num_connections())
+
+            break
