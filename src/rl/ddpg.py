@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import torch
 from torch import optim
@@ -18,7 +20,8 @@ class DDPGAgent:
         self.curr_states = np.array([0, 0, 0])
         # Networks
         self.actor = anf
-        self.actor_target = anf
+        self.actor_target = copy.deepcopy(anf)
+
         self.critic = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
         self.critic_target = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
 
