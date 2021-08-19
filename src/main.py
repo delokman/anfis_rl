@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
+from std_srvs.srv import Empty
 
 from jackal import Jackal
 from path import Path
@@ -11,8 +12,22 @@ from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course
 
+
+def call_empty_service(service_name):
+    rospy.wait_for_service(service_name)
+    try:
+        service = rospy.ServiceProxy(service_name, Empty)
+        service()
+    except rospy.ServiceException as e:
+        print("Service call failed: %s" % e)
+
+def reset_world():
+    call_empty_service('')
+
 if __name__ == '__main__':
-    rospy.init_node('ANFIS_RL')
+    rospy.init_node('anfis_rl')
+
+    reset_world()
 
     test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
     test_path.append([1000, 1000])
