@@ -10,7 +10,7 @@ from rl.memory import Memory
 
 
 class DDPGAgent:
-    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-3,
+    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-6 * 7,
                  critic_learning_rate=1e-4, gamma=0.99, tau=1e-3, max_memory_size=50000):
         # Params
         self.num_states = num_inputs
@@ -34,7 +34,7 @@ class DDPGAgent:
         # Training
         self.memory = Memory(max_memory_size)
         self.critic_criterion = torch.nn.MSELoss(reduction='sum')
-        self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=1e-6 * 7, momentum=0.99)
+        self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
 
     def get_action(self, state):
