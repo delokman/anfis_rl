@@ -69,7 +69,7 @@ class Jackal:
 
         if not self.stop:
             self.robot_path.append([self.x, self.y])
-        print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
+        # print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
 
     def wait_for_publisher(self):
         while not rospy.is_shutdown():
