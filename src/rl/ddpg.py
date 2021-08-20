@@ -64,8 +64,6 @@ class DDPGAgent(torch.nn.Module):
         next_Q = self.critic_target.forward(next_states, next_actions.detach())
         Qprime = rewards + self.gamma * next_Q
         critic_loss = self.critic_criterion(Qvals, Qprime) / 5.
-        if critic_loss.item() > 20:
-            critic_loss = critic_loss / critic_loss.item() * 20.0
 
         # Actor loss
         policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean() / -10.
