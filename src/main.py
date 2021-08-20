@@ -125,9 +125,11 @@ if __name__ == '__main__':
     test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
     test_path.append([1000, 1000])
 
-    name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%D-%H-%M-%s")}'
+    name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
 
-    summary = SummaryWriter(f'/home/auvsl/python3_ws/src/anfis_rl/runs/{name}/')
+    print(name)
+
+    summary = SummaryWriter(f'/home/auvsl/python3_ws/src/anfis_rl/runs/{name}')
 
     agent = DDPGAgent(3, 1, predefined_anfis_model())
     # agent.load_state_dict(torch.load('input'))
