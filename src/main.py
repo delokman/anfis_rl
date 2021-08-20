@@ -116,7 +116,7 @@ def epoch(i, agent, path, summary):
     summary.add_scalar("Error/Dist Error", dist_error, global_step=i)
     plot_anfis_data(i, agent)
 
-    torch.save(os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error}.chkp"), agent.state_dict())
+    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error}.chkp"))
 
 
 if __name__ == '__main__':
@@ -130,9 +130,12 @@ if __name__ == '__main__':
     print(name)
 
     summary = SummaryWriter(f'/home/auvsl/python3_ws/src/anfis_rl/runs/{name}')
+    os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
     agent = DDPGAgent(3, 1, predefined_anfis_model())
     # agent.load_state_dict(torch.load('input'))
+
+    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp"))
 
     for i in range(1000):
         epoch(i, agent, test_path, summary)
