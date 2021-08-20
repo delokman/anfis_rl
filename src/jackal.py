@@ -72,9 +72,9 @@ class Jackal:
         # print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
 
     def wait_for_publisher(self):
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and not self.pub.get_num_connections() == 1:
             # Wait until publisher gets connected
-            while not self.pub.get_num_connections() == 1:
-                print("Connections", self.pub.get_num_connections())
+            pass
 
-            break
+        print("Connected to Publisher")
+
