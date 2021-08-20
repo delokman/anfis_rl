@@ -21,7 +21,6 @@ from test_course import test_course, test_course2
 
 
 def call_service(service_name, service_type, data):
-    print(service_name)
     rospy.wait_for_service(service_name)
     try:
         service = rospy.ServiceProxy(service_name, service_type)
