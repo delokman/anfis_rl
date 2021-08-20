@@ -134,6 +134,7 @@ if __name__ == '__main__':
 
     agent = DDPGAgent(3, 1, predefined_anfis_model())
     # agent.load_state_dict(torch.load('input'))
+    plot_anfis_data(-1, agent)
 
     torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp"))
 
