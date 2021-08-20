@@ -9,10 +9,12 @@ from rl.citic import Critic
 from rl.memory import Memory
 
 
-class DDPGAgent:
+class DDPGAgent(torch.nn.Module):
     def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-6 * 7,
                  critic_learning_rate=1e-4, gamma=0.99, tau=1e-3, max_memory_size=50000):
         # Params
+        super().__init__()
+
         self.num_states = num_inputs
         self.num_actions = num_outputs
         self.gamma = gamma
@@ -36,6 +38,10 @@ class DDPGAgent:
         self.critic_criterion = torch.nn.MSELoss(reduction='sum')
         self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
+
+        self.ordered_dict = torch.nn.ModuleDict()
+        self.ordered_dict['actor'] = self.actor
+        self.ordered_dict['critic'] = self.critic
 
     def get_action(self, state):
         state = Variable(torch.from_numpy(state).float().unsqueeze(0))
