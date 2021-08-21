@@ -112,8 +112,10 @@ def epoch(i, agent, path, summary):
     ax.plot(test_path[:-1, 0], test_path[:-1, 1])
     ax.plot(robot_path[:, 0], robot_path[:, 1])
 
+    distance_errors = np.asarray(distance_errors)
+
     dist_error_mae = np.mean(np.abs(distance_errors))
-    dist_error_rsme = np.sqrt(np.mean(np.sqrt(distance_errors, 2)))
+    dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
 
     summary.add_figure("Gazebo/Plot", fig, global_step=i)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=i)
