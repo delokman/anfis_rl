@@ -114,14 +114,13 @@ def epoch(i, agent, path, summary):
 
     dist_error_mae = np.mean(np.abs(distance_errors))
     dist_error_rsme = np.sqrt(np.mean(np.sqrt(distance_errors, 2)))
-    print(dist_error)
 
     summary.add_figure("Gazebo/Plot", fig, global_step=i)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=i)
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=i)
     plot_anfis_data(i, agent)
 
-    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error}.chkp"))
+    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp"))
 
 
 if __name__ == '__main__':
