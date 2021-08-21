@@ -3,6 +3,7 @@ import datetime
 import os
 
 import matplotlib
+
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -75,7 +76,12 @@ def epoch(i, agent, path, summary):
             break
 
         path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
-        distance_errors.append(path_errors[0])
+
+        if np.isfinite(path_errors[0]):
+            distance_errors.append(path_errors[0])
+        else:
+            print("Error!!!", path_errors)
+
         path_errors = np.array(path_errors)
 
         #   for ddpg model
