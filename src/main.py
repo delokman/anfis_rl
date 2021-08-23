@@ -159,7 +159,7 @@ def epoch(i, agent, path, summary, checkpoint):
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp")
 
-    torch.save(agent.state_dict(), checkpoint_loc)
+    agent.save_checkpoint(checkpoint_loc)
 
     checkpoint.update(dist_error_mae, checkpoint_loc)
 
