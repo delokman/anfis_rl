@@ -53,7 +53,7 @@ def epoch(i, agent, path, summary, checkpoint):
     print(f"EPOCH {i}")
     reset_world()
 
-    rate = rospy.Rate(100)
+    rate = rospy.Rate(1000)
 
     jackal = Jackal()
     path = Path(path)
