@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import datetime
 import os
+import random
 
 import matplotlib
 
@@ -24,6 +25,10 @@ from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course, test_course2
+
+np.random.seed(42)
+random.seed(42)
+torch.random.manual_seed(42)
 
 
 def call_service(service_name, service_type, data):
