@@ -4,6 +4,8 @@ import os
 
 import matplotlib
 
+from rl.checkpoint_storage import LowestCheckpoint
+
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -47,7 +49,7 @@ def plot_anfis_data(epoch, agent):
     plot_fuzzy_variables(summary, anfis, epoch)
 
 
-def epoch(i, agent, path, summary):
+def epoch(i, agent, path, summary, checkpoint):
     print(f"EPOCH {i}")
     reset_world()
 
@@ -63,10 +65,12 @@ def epoch(i, agent, path, summary):
     jackal.linear_velocity = default_linear_velocity
 
     distance_errors = []
+    rewards_cummulative = []
 
-    batch_size = 64
+    batch_size = 128
     done = False
     max_yaw_rate = 4
+    update_step = 0
 
     while not rospy.is_shutdown():
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
@@ -77,8 +81,15 @@ def epoch(i, agent, path, summary):
 
         path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
 
-        if np.isfinite(path_errors[0]):
-            distance_errors.append(path_errors[0])
+        dist_e = path_errors[0]
+
+        if np.isfinite(dist_e):
+            distance_errors.append(dist_e)
+
+            if dist_e > 4:
+                print("Reloading from save,", checkpoint.checkpoint_location)
+                checkpoint.reload(agent)
+                return
         else:
             print("Error!!!", path_errors)
 
@@ -87,6 +98,11 @@ def epoch(i, agent, path, summary):
         #   for ddpg model
         control_law = agent.get_action(path_errors)
         control_law = control_law.item()
+
+        if not np.isfinite(control_law):
+            print("Error for control law resetting")
+            print("Reloading from save,", checkpoint.checkpoint_location)
+            checkpoint.reload(agent)
 
         if control_law > max_yaw_rate:
             control_law = max_yaw_rate
@@ -128,7 +144,23 @@ def epoch(i, agent, path, summary):
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=i)
     plot_anfis_data(i, agent)
 
-    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp"))
+    x = np.arange(0, len(distance_errors))
+
+    fig, ax = plt.subplots()
+    ax.plot(x, distance_errors)
+    summary.add_figure("Gazebo/Distance Errors", fig, global_step=i)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, rewards_cummulative)
+    summary.add_figure("Gazebo/Rewards", fig, global_step=i)
+
+    checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp")
+
+    torch.save(agent.state_dict(), checkpoint_loc)
+
+    checkpoint.update(dist_error_mae, checkpoint_loc)
+
+    return dist_error_mae
 
 
 if __name__ == '__main__':
@@ -148,7 +180,10 @@ if __name__ == '__main__':
     # agent.load_state_dict(torch.load('input'))
     plot_anfis_data(-1, agent)
 
-    torch.save(agent.state_dict(), os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp"))
+    loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
+    agent.save_checkpoint(loc)
+
+    checkpoint_saver = LowestCheckpoint()
 
     for i in range(1000):
-        epoch(i, agent, test_path, summary)
+        epoch(i, agent, test_path, summary, checkpoint_saver)
