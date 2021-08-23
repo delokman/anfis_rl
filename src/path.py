@@ -8,6 +8,18 @@ class Path:
         self.path_length = len(self.path) - 1
         self.path_count = 0
 
+        self.estimated_path_length = self.calcualte_estimated_path_length()
+
+    def calcualte_estimated_path_length(self):
+        length = 0
+
+        prev = self.path[0]
+
+        for i in range(1, len(self.path)):
+            curr = self.path[i]
+
+            prev = curr
+
     def get_trajectory(self, robot):
         pos_x, pos_y = robot.get_pose()
 
