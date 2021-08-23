@@ -41,7 +41,25 @@ class DDPGAgent(torch.nn.Module):
 
         self.ordered_dict = torch.nn.ModuleDict()
         self.ordered_dict['actor'] = self.actor
+        self.ordered_dict['actor_target'] = self.actor_target
         self.ordered_dict['critic'] = self.critic
+        self.ordered_dict['critic_target'] = self.critic_target
+
+    def save_checkpoint(self, location):
+        state_dicts = {
+            'actor': self.state_dict(),
+            'actor_optimizer': self.actor_optimizer.state_dict(),
+            'critic_optimizer': self.critic_optimizer.state_dict(),
+        }
+
+        torch.save(state_dicts, location)
+
+    def load_checkpoint(self, location):
+        state_dicts = torch.load(location)
+
+        self.load_state_dict(state_dicts['actor'])
+        self.actor_optimizer.load_state_dict(state_dicts['actor_optimizer'])
+        self.critic_optimizer.load_state_dict(state_dicts['critic_optimizer'])
 
     def get_action(self, state):
         state = Variable(torch.from_numpy(state).float().unsqueeze(0))
