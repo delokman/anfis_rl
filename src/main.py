@@ -69,6 +69,8 @@ def epoch(i, agent, path, summary, checkpoint):
 
     jackal.linear_velocity = default_linear_velocity
 
+    timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.2
+
     distance_errors = []
     rewards_cummulative = []
 
@@ -77,11 +79,20 @@ def epoch(i, agent, path, summary, checkpoint):
     max_yaw_rate = 4
     update_step = 0
 
+    start_time = rospy.get_time()
+
     while not rospy.is_shutdown():
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
 
         if stop:
             print("STOP")
+            break
+
+        difference = rospy.get_time() - start_time
+
+        if difference >= timeout_time:
+            print("Exceeded timeout returning to checkpoint")
+            checkpoint.reload(agent)
             break
 
         path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
@@ -97,6 +108,7 @@ def epoch(i, agent, path, summary, checkpoint):
                 return
         else:
             print("Error!!!", path_errors)
+            break
 
         path_errors = np.array(path_errors)
 
