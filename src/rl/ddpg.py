@@ -10,8 +10,8 @@ from rl.memory import Memory
 
 
 class DDPGAgent(torch.nn.Module):
-    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-6 * 7,
-                 critic_learning_rate=1e-4, gamma=0.99, tau=1e-3, max_memory_size=50000):
+    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-4,
+                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000):
         # Params
         super().__init__()
 

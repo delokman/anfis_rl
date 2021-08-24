@@ -74,7 +74,7 @@ def epoch(i, agent, path, summary, checkpoint):
     distance_errors = []
     rewards_cummulative = []
 
-    batch_size = 128
+    batch_size = 64
     done = False
     max_yaw_rate = 4
     update_step = 0
