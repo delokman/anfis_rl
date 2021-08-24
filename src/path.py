@@ -15,10 +15,17 @@ class Path:
 
         prev = self.path[0]
 
-        for i in range(1, len(self.path)):
+        for i in range(1, len(self.path) - 1):
             curr = self.path[i]
 
+            length += np.linalg.norm(np.subtract(prev, curr))
+
             prev = curr
+
+        return length
+
+    def get_estimated_time(self, linear_velocity):
+        return self.estimated_path_length / linear_velocity
 
     def get_trajectory(self, robot):
         pos_x, pos_y = robot.get_pose()
