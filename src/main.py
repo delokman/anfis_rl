@@ -144,7 +144,7 @@ def epoch(i, agent, path, summary, checkpoint):
 
         jackal.control_law = control_law
 
-        rewards = reward(path_errors, default_linear_velocity, control_law)
+        rewards = reward(path_errors, default_linear_velocity, control_law) / 15.
         rewards_cummulative.append(rewards)
 
         if update_step % 100 == 0:
