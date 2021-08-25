@@ -136,16 +136,9 @@ def epoch(i, agent, path, summary, checkpoint):
         rewards_cummulative.append(rewards)
 
         if update_step % 100 == 0:
+            agent_update(path_errors, rewards, control_law, agent, done, batch_size, dist_e)
 
-            # do this every 0.05 s
-            # rewards = -1000
-            state = agent.curr_states
-            agent.curr_states = path_errors
-
-            agent.memory.push(state, control_law, rewards, path_errors, done)  # control_law after gain or before gain?
-            if len(agent.memory) > batch_size:
-                agent.update(batch_size)
-
+        update_step += 1
         # print(control_law)
         jackal.pub_motion()
         rate.sleep()
