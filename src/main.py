@@ -180,6 +180,7 @@ def epoch(i, agent, path, summary, checkpoint):
     ax.plot(x, distance_errors)
     summary.add_figure("Gazebo/Distance Errors", fig, global_step=i)
 
+    x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
     summary.add_figure("Gazebo/Rewards", fig, global_step=i)
