@@ -92,6 +92,8 @@ def epoch(i, agent, path, summary, checkpoint):
 
         if difference >= timeout_time:
             print("Exceeded timeout returning to checkpoint")
+
+            print("Reloading from save,", checkpoint.checkpoint_location)
             checkpoint.reload(agent)
             break
 
@@ -105,9 +107,11 @@ def epoch(i, agent, path, summary, checkpoint):
             if dist_e > 4:
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
-                return
+                break
         else:
             print("Error!!!", path_errors)
+            print("Reloading from save,", checkpoint.checkpoint_location)
+            checkpoint.reload(agent)
             break
 
         path_errors = np.array(path_errors)
