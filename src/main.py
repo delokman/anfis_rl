@@ -72,6 +72,7 @@ def epoch(i, agent, path, summary, checkpoint):
 
     jackal = Jackal()
     path = Path(path)
+    print("Path Length", path.estimated_path_length)
 
     jackal.wait_for_publisher()
 
@@ -79,7 +80,8 @@ def epoch(i, agent, path, summary, checkpoint):
 
     jackal.linear_velocity = default_linear_velocity
 
-    timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.2
+    timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
+    print("Path Timeout period", timeout_time)
 
     distance_errors = []
     rewards_cummulative = []
@@ -165,6 +167,7 @@ def epoch(i, agent, path, summary, checkpoint):
 
     dist_error_mae = np.mean(np.abs(distance_errors))
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
+    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme)
 
     summary.add_figure("Gazebo/Plot", fig, global_step=i)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=i)
