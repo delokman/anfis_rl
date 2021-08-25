@@ -46,12 +46,22 @@ def reset_world():
     rospy.sleep(2)
 
 
-def plot_anfis_data(epoch, agent):
+def plot_anfis_data(summary, epoch, agent):
     anfis = agent.actor
 
     plot_fuzzy_consequent(summary, anfis, epoch)
     plot_fuzzy_membership_functions(summary, anfis, epoch)
     plot_fuzzy_variables(summary, anfis, epoch)
+
+
+def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_error):
+    ####do this every 0.075 s
+    state = agent.curr_states
+    new_state = np.array(new_state)
+    agent.curr_states = new_state
+    agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
+    if len(agent.memory) > batch_size and dis_error > 0.10:
+        agent.update(batch_size)
 
 
 def epoch(i, agent, path, summary, checkpoint):
@@ -159,7 +169,7 @@ def epoch(i, agent, path, summary, checkpoint):
     summary.add_figure("Gazebo/Plot", fig, global_step=i)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=i)
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=i)
-    plot_anfis_data(i, agent)
+    plot_anfis_data(summary, i, agent)
 
     x = np.arange(0, len(distance_errors))
 
@@ -197,7 +207,7 @@ if __name__ == '__main__':
     agent.critic.load_state_dict(torch.load('/home/auvsl/python3_ws/src/anfis_rl/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
-    plot_anfis_data(-1, agent)
+    plot_anfis_data(summary, -1, agent)
 
     loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
     agent.save_checkpoint(loc)
