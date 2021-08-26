@@ -59,4 +59,4 @@ def reward(errors, linear_vel, angular_vel):
     angular_vel = np.abs(angular_vel) * steering_penalty_gain / (np.exp(dis_temp * steering_iwrt_DE)) * -1
 
     rewards = dis + theta_near + theta_far + linear_vel + angular_vel
-    return rewards
+    return rewards / 60

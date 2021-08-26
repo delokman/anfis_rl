@@ -9,10 +9,12 @@ from rl.citic import Critic
 from rl.memory import Memory
 
 
-class DDPGAgent:
-    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-6 * 7,
-                 critic_learning_rate=1e-4, gamma=0.99, tau=1e-3, max_memory_size=50000):
+class DDPGAgent(torch.nn.Module):
+    def __init__(self, num_inputs, num_outputs, anf, hidden_size=128, actor_learning_rate=1e-4,
+                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000):
         # Params
+        super().__init__()
+
         self.num_states = num_inputs
         self.num_actions = num_outputs
         self.gamma = gamma
@@ -37,6 +39,28 @@ class DDPGAgent:
         self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
 
+        self.ordered_dict = torch.nn.ModuleDict()
+        self.ordered_dict['actor'] = self.actor
+        self.ordered_dict['actor_target'] = self.actor_target
+        self.ordered_dict['critic'] = self.critic
+        self.ordered_dict['critic_target'] = self.critic_target
+
+    def save_checkpoint(self, location):
+        state_dicts = {
+            'actor': self.state_dict(),
+            'actor_optimizer': self.actor_optimizer.state_dict(),
+            'critic_optimizer': self.critic_optimizer.state_dict(),
+        }
+
+        torch.save(state_dicts, location)
+
+    def load_checkpoint(self, location):
+        state_dicts = torch.load(location)
+
+        self.load_state_dict(state_dicts['actor'])
+        self.actor_optimizer.load_state_dict(state_dicts['actor_optimizer'])
+        self.critic_optimizer.load_state_dict(state_dicts['critic_optimizer'])
+
     def get_action(self, state):
         state = Variable(torch.from_numpy(state).float().unsqueeze(0))
         action = self.actor.forward(state)
@@ -58,8 +82,6 @@ class DDPGAgent:
         next_Q = self.critic_target.forward(next_states, next_actions.detach())
         Qprime = rewards + self.gamma * next_Q
         critic_loss = self.critic_criterion(Qvals, Qprime) / 5.
-        if critic_loss.item() > 20:
-            critic_loss = critic_loss / critic_loss.item() * 20.0
 
         # Actor loss
         policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean() / -10.

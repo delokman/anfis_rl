@@ -54,6 +54,9 @@ class Jackal:
     def pub_motion(self):
         self.pub.publish(self.twist)
 
+    def get_angle(self):
+        return self.current_angle
+
     def callback(self, msg):
         self.x = msg.pose.pose.position.x
         self.y = msg.pose.pose.position.y
@@ -66,10 +69,12 @@ class Jackal:
 
         if not self.stop:
             self.robot_path.append([self.x, self.y])
-        print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
+        # print("X:", self.x, " Y:", self.y, " Angle:", math.degrees(self.current_angle))
 
     def wait_for_publisher(self):
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and not self.pub.get_num_connections() == 1:
             # Wait until publisher gets connected
-            while not self.pub.get_num_connections() == 1:
-                print(self.pub.get_num_connections())
+            pass
+
+        print("Connected to Publisher")
+
