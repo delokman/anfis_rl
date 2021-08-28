@@ -1,6 +1,15 @@
 <launch>
   <!-- Launch Gazebo with the specified world -->
-  <include file="$(find jackal_gazebo)/launch/empty_world.launch">
-  </include>
+
+   <arg name="simulation" default="true" />
+
+    <group if="$(arg simulation)">
+        <include file="$(find jackal_gazebo)/launch/empty_world.launch">
+            <arg name="joystick" value="false" />
+            <arg name="gui" value="true" />
+        </include>
+    </group>
+
+    <node pkg="anfis_rl" name="main" type="main.py" output="screen" />
 
 </launch>
