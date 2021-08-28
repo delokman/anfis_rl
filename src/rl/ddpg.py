@@ -5,8 +5,10 @@ import torch
 from torch import optim
 from torch.autograd import Variable
 
+from anfis.utils import save_fuzzy_membership_functions
 from rl.citic import Critic
 from rl.memory import Memory
+import pathlib
 
 
 class DDPGAgent(torch.nn.Module):
@@ -51,6 +53,15 @@ class DDPGAgent(torch.nn.Module):
             'actor_optimizer': self.actor_optimizer.state_dict(),
             'critic_optimizer': self.critic_optimizer.state_dict(),
         }
+
+        loc = pathlib.Path(location)
+        epoch = int(loc.name[:-len('.chkp')].split('-')[0])
+        folder = 'mfs'
+
+        mfs_folder = loc.parent.joinpath(folder)
+        mfs_folder.mkdir(exist_ok=True)
+        mfs_checkpoint = mfs_folder.joinpath(f'{epoch}.txt')
+        save_fuzzy_membership_functions(self.actor, mfs_checkpoint)
 
         torch.save(state_dicts, location)
 
