@@ -234,3 +234,5 @@ if __name__ == '__main__':
 
     for i in range(1000):
         epoch(i, agent, test_path, summary, checkpoint_saver)
+
+    print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
