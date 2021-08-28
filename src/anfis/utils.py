@@ -176,6 +176,11 @@ def save_fuzzy_membership_functions(model, file_name='mfs.txt'):
             for p in parameters:
                 mfs_file.write(f'{p[0]}={p[1].item()}\n')
 
+        if model.rules_type == ConsequentLayerType.MAMDANI:
+            mfs_file.write('mamdani\n')
+            for name, value in model.layer['consequent'].mamdani_defs.named_parameters():
+                mfs_file.write(f'{name}={value.item()}\n')
+
 
 def plot_summary_results(summary: SummaryWriter, y_predicted, y_actual):
     fig, ax = plt.subplots()
