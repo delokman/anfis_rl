@@ -86,6 +86,8 @@ def epoch(i, agent, path, summary, checkpoint):
     print("Path Timeout period", timeout_time)
 
     distance_errors = []
+    theta_far_errors = []
+    theta_near_errors = []
     rewards_cummulative = []
 
     batch_size = 64
@@ -113,10 +115,12 @@ def epoch(i, agent, path, summary, checkpoint):
 
         path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
 
-        dist_e = path_errors[0]
+        dist_e, theta_far, theta_near = path_errors
 
         if np.isfinite(dist_e):
             distance_errors.append(dist_e)
+            theta_far_errors.append(theta_far)
+            theta_near_errors.append(theta_near)
 
             if dist_e > 4:
                 print("Reloading from save,", checkpoint.checkpoint_location)
@@ -180,7 +184,15 @@ def epoch(i, agent, path, summary, checkpoint):
 
     fig, ax = plt.subplots()
     ax.plot(x, distance_errors)
-    summary.add_figure("Gazebo/Distance Errors", fig, global_step=i)
+    summary.add_figure("Gazebo/Graphs/Distance Errors", fig, global_step=i)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, theta_near_errors)
+    summary.add_figure("Gazebo/Graphs/Theta Near Errors", fig, global_step=i)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, theta_far_errors)
+    summary.add_figure("Gazebo/Graphs/Theta Far Errors", fig, global_step=i)
 
     x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
