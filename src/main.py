@@ -208,11 +208,20 @@ def epoch(i, agent, path, summary, checkpoint):
     return dist_error_mae
 
 
+def extend_path(path):
+    before_end, end = np.array(path[-2]), np.array(path[-1])
+    after_end = (end - before_end) + end
+
+    path.append(after_end)
+
+
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
-    test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
-    test_path.append([1000, 1000])
+    # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
+    # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
+    test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+    extend_path(test_path)
 
     name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
 
