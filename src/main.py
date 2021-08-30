@@ -199,6 +199,10 @@ def epoch(i, agent, path, summary, checkpoint, params):
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp")
 
+    summary.add_hparams(params, {
+        'hparams/Best MAE': checkpoint.error,
+    }, run_name='.')
+
     agent.save_checkpoint(checkpoint_loc)
 
     checkpoint.update(dist_error_mae, checkpoint_loc)
