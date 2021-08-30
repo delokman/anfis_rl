@@ -160,6 +160,10 @@ def epoch(i, agent, path, summary, checkpoint, params):
         jackal.pub_motion()
         rate.sleep()
 
+    jackal.linear_velocity = 0
+    jackal.control_law = 0
+    jackal.pub_motion()
+
     # plot
     test_path = np.array(path.path)
     robot_path = np.array(jackal.robot_path)
