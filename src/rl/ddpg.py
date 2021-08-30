@@ -26,6 +26,17 @@ class DDPGAgent(torch.nn.Module):
         self.actor = anf
         self.actor_target = copy.deepcopy(anf)
 
+        self.input_params = {
+            'num_in': num_inputs,
+            'num_out': num_outputs,
+            'num_hidden': hidden_size,
+            'actor_lr': actor_learning_rate,
+            'critic_lr': critic_learning_rate,
+            'gamma': gamma,
+            'tau': tau,
+            'max_memory': max_memory_size
+        }
+
         self.critic = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
         self.critic_target = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
 

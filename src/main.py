@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import datetime
+import json
 import os
 import random
 
@@ -66,7 +67,7 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
         agent.update(batch_size)
 
 
-def epoch(i, agent, path, summary, checkpoint):
+def epoch(i, agent, path, summary, checkpoint, params):
     print(f"EPOCH {i}")
     reset_world()
 
@@ -78,9 +79,7 @@ def epoch(i, agent, path, summary, checkpoint):
 
     jackal.wait_for_publisher()
 
-    default_linear_velocity = 1.5
-
-    jackal.linear_velocity = default_linear_velocity
+    jackal.linear_velocity = params['linear_vel']
 
     timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
     print("Path Timeout period", timeout_time)
@@ -90,7 +89,6 @@ def epoch(i, agent, path, summary, checkpoint):
     theta_near_errors = []
     rewards_cummulative = []
 
-    batch_size = 64
     done = False
     max_yaw_rate = 4
     update_step = 0
@@ -150,11 +148,11 @@ def epoch(i, agent, path, summary, checkpoint):
 
         jackal.control_law = control_law
 
-        rewards = reward(path_errors, default_linear_velocity, control_law) / 15.
+        rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
         rewards_cummulative.append(rewards)
 
-        if update_step % 100 == 0:
-            agent_update(path_errors, rewards, control_law, agent, done, batch_size, dist_e)
+        if update_step % params['update_rate'] == 0:
+            agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e)
 
         update_step += 1
         # print(control_law)
@@ -241,7 +239,18 @@ if __name__ == '__main__':
 
     checkpoint_saver = LowestCheckpoint()
 
-    for i in range(1000):
-        epoch(i, agent, test_path, summary, checkpoint_saver)
+    params = {
+        'linear_vel': 1.5,
+        'batch_size': 128,
+        'update_rate': 100,
+        'epoch_nums': 100
+    }
+    params.update(agent.input_params)
+
+    with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
+        json.dump(params, file)
+
+    for i in range(params['epoch_nums']):
+        epoch(i, agent, test_path, summary, checkpoint_saver, params)
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
