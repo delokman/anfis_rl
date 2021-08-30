@@ -27,7 +27,7 @@ from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2
+from test_course import test_course, test_course2, hard_course
 
 np.random.seed(42)
 random.seed(42)
@@ -134,7 +134,7 @@ def epoch(i, agent, path, summary, checkpoint, params):
 
         #   for ddpg model
         control_law = agent.get_action(path_errors)
-        control_law = control_law.item()
+        control_law = control_law.item() * params['control_mul']
 
         if not np.isfinite(control_law):
             print("Error for control law resetting")
@@ -247,7 +247,8 @@ if __name__ == '__main__':
         'linear_vel': 1.5,
         'batch_size': 128,
         'update_rate': 100,
-        'epoch_nums': 100
+        'epoch_nums': 100,
+        'control_mul': 1.
     }
     params.update(agent.input_params)
 
