@@ -31,6 +31,8 @@ from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course, test_course2, hard_course
 
+import rospkg
+
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
@@ -239,11 +241,16 @@ if __name__ == '__main__':
 
     print(name)
 
-    summary = SummaryWriter(f'/home/auvsl/python3_ws/src/anfis_rl/runs/{name}')
+    rospack = rospkg.RosPack()
+    package_location = rospack.get_path('anfis_rl')
+
+    print("Package Location:", package_location)
+
+    summary = SummaryWriter(f'{package_location}/runs/{name}')
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
     agent = DDPGAgent(3, 1, predefined_anfis_model())
-    agent.critic.load_state_dict(torch.load('/home/auvsl/python3_ws/src/anfis_rl/critic.weights'))
+    agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
     plot_anfis_data(summary, -1, agent)
