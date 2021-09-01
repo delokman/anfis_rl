@@ -47,8 +47,9 @@ def call_service(service_name, service_type, data):
         print("Service call failed: %s" % e)
 
 
-def reset_world():
-    call_service('/gazebo/reset_world', Empty, [])
+def reset_world(is_simulation=False):
+    if is_simulation:
+        call_service('/gazebo/reset_world', Empty, [])
     call_service('/set_pose', SetPose, [])
     rospy.sleep(2)
 
@@ -73,7 +74,7 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
 
 def epoch(i, agent, path, summary, checkpoint, params, pauser):
     print(f"EPOCH {i}")
-    reset_world()
+    reset_world(params['simulation'])
     pauser.wait_for_publisher()
 
     rate = rospy.Rate(1000)
@@ -130,7 +131,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
             theta_far_errors.append(theta_far)
             theta_near_errors.append(theta_near)
 
-            if dist_e > 4:
+            if not params['simulation'] and dist_e > 4:
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
                 break
@@ -229,6 +230,10 @@ def extend_path(path):
     path.append(after_end)
 
 
+def is_gazebo_simulation():
+    return "/gazebo/model_states" in rospy.get_published_topics()
+
+
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
@@ -260,13 +265,19 @@ if __name__ == '__main__':
 
     checkpoint_saver = LowestCheckpoint()
 
+    is_simulation = is_gazebo_simulation()
+
+    print("Is a simulation:", is_simulation)
+
     params = {
         'linear_vel': 1.5,
         'batch_size': 128,
         'update_rate': 100,
         'epoch_nums': 100,
-        'control_mul': 1.
+        'control_mul': 4. if is_simulation else 1.,
+        'simulation': is_simulation
     }
+
     params.update(agent.input_params)
 
     with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
