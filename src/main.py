@@ -8,6 +8,7 @@ import random
 
 import matplotlib
 
+from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
 from utils import add_hparams
 
@@ -68,9 +69,10 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
         agent.update(batch_size)
 
 
-def epoch(i, agent, path, summary, checkpoint, params):
+def epoch(i, agent, path, summary, checkpoint, params, pauser):
     print(f"EPOCH {i}")
     reset_world()
+    pauser.wait_for_publisher()
 
     rate = rospy.Rate(1000)
 
@@ -96,7 +98,12 @@ def epoch(i, agent, path, summary, checkpoint, params):
 
     start_time = rospy.get_time()
 
+    sleep_rate = rospy.Rate(60)
+
     while not rospy.is_shutdown():
+        while pauser.pause:
+            sleep_rate.sleep()
+
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
 
         if stop:
@@ -258,7 +265,9 @@ if __name__ == '__main__':
     with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
         json.dump(params, file)
 
+    pauser = BluetoothEStop()
+
     for i in range(params['epoch_nums']):
-        epoch(i, agent, test_path, summary, checkpoint_saver, params)
+        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser)
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
