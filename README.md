@@ -10,6 +10,14 @@ roslaunch jackal_gazebo empty_world.launch joystick:=false gui:=false
 
 catkin clean; catkin build --cmake-args -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
 
+##Tensorboard run
+## Local machine
+`ssh -L 16007:127.0.0.1:16007 nvidia@192.168.0.12`
+
+## Server
+`tensorboard --logdir=runs --samples_per_plugin images=999 --port=16007`
+tensorboard --logdir=runs --samples_per_plugin images=999
+
 also 
 
 
