@@ -72,6 +72,64 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
         agent.update(batch_size)
 
 
+def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                        rewards_cummulative,
+                        checkpoint, epoch):
+    # plot
+    test_path = np.array(path.path)
+    robot_path = np.array(jackal.robot_path)
+
+    fig, ax = plt.subplots()
+    ax.plot(test_path[:-1, 0], test_path[:-1, 1])
+    ax.plot(robot_path[:, 0], robot_path[:, 1])
+
+    distance_errors = np.asarray(distance_errors)
+
+    dist_error_mae = np.mean(np.abs(distance_errors))
+    dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
+    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme)
+
+    summary.add_figure("Gazebo/Plot", fig, global_step=epoch)
+    summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
+    summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
+    plot_anfis_data(summary, epoch, agent)
+
+    x = np.arange(0, len(distance_errors))
+
+    fig, ax = plt.subplots()
+    ax.plot(x, distance_errors)
+    summary.add_figure("Gazebo/Graphs/Distance Errors", fig, global_step=epoch)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, theta_near_errors)
+    summary.add_figure("Gazebo/Graphs/Theta Near Errors", fig, global_step=epoch)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, theta_far_errors)
+    summary.add_figure("Gazebo/Graphs/Theta Far Errors", fig, global_step=epoch)
+
+    x = np.arange(0, len(rewards_cummulative))
+    fig, ax = plt.subplots()
+    ax.plot(x, rewards_cummulative)
+    summary.add_figure("Gazebo/Rewards", fig, global_step=epoch)
+
+    checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
+
+    agent.save_checkpoint(checkpoint_loc)
+
+    checkpoint.update(dist_error_mae, checkpoint_loc)
+
+    add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
+    return dist_error_mae
+
+
+def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+             rewards_cummulative, checkpoint, epoch):
+    print("Shutting down by saving data")
+    summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                        rewards_cummulative, checkpoint, epoch)
+
+
 def epoch(i, agent, path, summary, checkpoint, params, pauser):
     print(f"EPOCH {i}")
     reset_world(params['simulation'])
@@ -102,6 +160,10 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
     start_time = rospy.get_time()
 
     sleep_rate = rospy.Rate(60)
+
+    rospy.on_shutdown(
+        lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                         rewards_cummulative, checkpoint, i))
 
     while not rospy.is_shutdown():
         while pauser.pause:
@@ -174,51 +236,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
     jackal.control_law = 0
     jackal.pub_motion()
 
-    # plot
-    test_path = np.array(path.path)
-    robot_path = np.array(jackal.robot_path)
-
-    fig, ax = plt.subplots()
-    ax.plot(test_path[:-1, 0], test_path[:-1, 1])
-    ax.plot(robot_path[:, 0], robot_path[:, 1])
-
-    distance_errors = np.asarray(distance_errors)
-
-    dist_error_mae = np.mean(np.abs(distance_errors))
-    dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
-    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme)
-
-    summary.add_figure("Gazebo/Plot", fig, global_step=i)
-    summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=i)
-    summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=i)
-    plot_anfis_data(summary, i, agent)
-
-    x = np.arange(0, len(distance_errors))
-
-    fig, ax = plt.subplots()
-    ax.plot(x, distance_errors)
-    summary.add_figure("Gazebo/Graphs/Distance Errors", fig, global_step=i)
-
-    fig, ax = plt.subplots()
-    ax.plot(x, theta_near_errors)
-    summary.add_figure("Gazebo/Graphs/Theta Near Errors", fig, global_step=i)
-
-    fig, ax = plt.subplots()
-    ax.plot(x, theta_far_errors)
-    summary.add_figure("Gazebo/Graphs/Theta Far Errors", fig, global_step=i)
-
-    x = np.arange(0, len(rewards_cummulative))
-    fig, ax = plt.subplots()
-    ax.plot(x, rewards_cummulative)
-    summary.add_figure("Gazebo/Rewards", fig, global_step=i)
-
-    checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{i}-{dist_error_mae}.chkp")
-
-    agent.save_checkpoint(checkpoint_loc)
-
-    checkpoint.update(dist_error_mae, checkpoint_loc)
-
-    add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=i)
+    dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
+                                         theta_near_errors,
+                                         rewards_cummulative, checkpoint, i)
 
     return dist_error_mae
 
