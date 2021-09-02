@@ -50,7 +50,7 @@ def call_service(service_name, service_type, data):
 def reset_world(is_simulation=False):
     if is_simulation:
         call_service('/gazebo/reset_world', Empty, [])
-    call_service('/set_pose', SetPose, [])
+        call_service('/set_pose', SetPose, [])
     rospy.sleep(2)
 
 
@@ -231,7 +231,8 @@ def extend_path(path):
 
 
 def is_gazebo_simulation():
-    return "/gazebo/model_states" in rospy.get_published_topics()
+    topic_names = set(i for i, _ in rospy.get_published_topics())
+    return "/gazebo/model_states" in topic_names
 
 
 if __name__ == '__main__':
@@ -274,7 +275,7 @@ if __name__ == '__main__':
         'batch_size': 128,
         'update_rate': 100,
         'epoch_nums': 100,
-        'control_mul': 4. if is_simulation else 1.,
+        'control_mul': 1. if is_simulation else 4.,
         'simulation': is_simulation
     }
 
