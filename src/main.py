@@ -167,7 +167,10 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
 
     while not rospy.is_shutdown():
         while pauser.pause:
-            sleep_rate.sleep()
+            if not rospy.is_shutdown():
+                sleep_rate.sleep()
+            else:
+                rospy.signal_shutdown("Requesting shutdown but in e-stop mode")
 
         current_point, target_point, future_point, stop = path.get_trajectory(jackal)
 
