@@ -6,13 +6,12 @@ from std_msgs.msg import Bool
 
 
 class BluetoothEStop:
-    def __init__(self, button_idxs: Optional[list] = None) -> None:
+    def __init__(self, stop_button_idx=0, start_button_idx=3) -> None:
         super().__init__()
 
-        if button_idxs is None:
-            button_idxs = [0, 1, 2, 3]
+        self.start_button_idx = start_button_idx
+        self.stop_button_idx = stop_button_idx
 
-        self.button_idxs = button_idxs
         self.sub = rospy.Subscriber("/bluetooth_teleop/joy", Joy, self.callback)
         self.pub = rospy.Publisher("/e_stop", Bool, queue_size=10)
         self._pause = False
@@ -30,15 +29,10 @@ class BluetoothEStop:
         self.pub.publish(self._pause_object)
 
     def callback(self, msg: Joy):
-        flip = False
-
-        for i in self.button_idxs:
-            if msg.buttons[i] == 1:
-                flip = True
-                break
-
-        if flip:
-            self.pause = not self.pause
+        if msg.buttons[self.stop_button_idx]:
+            self.pause = True
+        elif msg.buttons[self.start_button_idx]:
+            self.pause = False
 
     def wait_for_publisher(self):
         while not rospy.is_shutdown() and not self.pub.get_num_connections() == 1:
