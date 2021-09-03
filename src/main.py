@@ -232,6 +232,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
         jackal.pub_motion()
         rate.sleep()
 
+    del rospy.core._client_shutdown_hooks[-1]
+
     jackal.linear_velocity = 0
     jackal.control_law = 0
     jackal.pub_motion()
