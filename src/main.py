@@ -125,7 +125,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
              rewards_cummulative, checkpoint, epoch):
-    print("Shutting down by saving data")
+    print("Shutting down by saving data epoch:", epoch)
     summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative, checkpoint, epoch)
 
