@@ -77,7 +77,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
                         checkpoint, epoch):
     # plot
     test_path = np.array(path.path)
-    robot_path = np.array(jackal.robot_path)
+    robot_path = np.array(jackal.inverse_transform_poses(path))
 
     fig, ax = plt.subplots()
     ax.plot(test_path[:-1, 0], test_path[:-1, 1])
@@ -130,14 +130,14 @@ def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_er
                         rewards_cummulative, checkpoint, epoch)
 
 
-def epoch(i, agent, path, summary, checkpoint, params, pauser):
+def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal):
     print(f"EPOCH {i}")
     reset_world(params['simulation'])
     pauser.wait_for_publisher()
 
     rate = rospy.Rate(1000)
 
-    jackal = Jackal()
+    jackal.clear_pose()
     path = Path(path)
     print("Path Length", path.estimated_path_length)
 
@@ -160,6 +160,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser):
     start_time = rospy.get_time()
 
     sleep_rate = rospy.Rate(60)
+
+    path.set_initial_state(jackal)
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
@@ -311,7 +313,9 @@ if __name__ == '__main__':
 
     pauser = BluetoothEStop()
 
+    jackal = Jackal()
+
     for i in range(params['epoch_nums']):
-        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser)
+        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal)
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
