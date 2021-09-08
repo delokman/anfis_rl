@@ -10,6 +10,8 @@ class Path:
 
         self.estimated_path_length = self.calcualte_estimated_path_length()
 
+        self.transform = None
+
     def calcualte_estimated_path_length(self):
         length = 0
 
@@ -32,6 +34,13 @@ class Path:
 
         current_point = np.array(self.path[self.path_count])
         target = np.array(self.path[self.path_count + 1])
+
+        if self.transform is not None:
+            current_point = self.transform @ np.append(current_point, 1)
+            target = self.transform @ np.append(target, 1)
+
+            current_point = current_point[:-1]
+            target = target[:-1]
 
         A = np.array([[(current_point[1] - target[1]), (target[0] - current_point[0])],
                       [(target[0] - current_point[0]), (target[1] - current_point[1])]])
@@ -60,6 +69,73 @@ class Path:
             tar = np.array(self.path[self.path_count + 1])
             future = np.array(self.path[self.path_count + 2])
 
+        if self.transform is not None:
+            curr = self.transform @ np.append(curr, 1)
+            tar = self.transform @ np.append(tar, 1)
+            future = self.transform @ np.append(future, 1)
+
+            curr = curr[:-1]
+            tar = tar[:-1]
+            future = future[:-1]
+
         robot.stop = self.stop
 
         return curr, tar, future, self.stop
+
+    def transformed_path(self):
+        if self.transform is None:
+            return self.path
+        else:
+            points = []
+
+            for p in self.path:
+                p = self.transform @ np.append(p, 1)
+                p = p[:-1]
+                points.append(p)
+
+            return points
+
+    def set_initial_state(self, jackal):
+        pose = jackal.get_pose()
+        theta = jackal.get_angle()
+        print(pose, theta)
+        #
+        # T = np.array([
+        #     [1, 0, pose[0]],
+        #     [0, 1, pose[1]],
+        #     [0, 0, 1],
+        # ])
+        #
+        # R = np.array([
+        #     [np.cos(theta), -np.sin(theta), 0],
+        #     [np.sin(theta), np.cos(theta), 0],
+        #     [0, 0, 1],
+        # ])
+
+        T = np.array([
+            [1, 0, pose[0]],
+            [0, 1, pose[1]],
+            [0, 0, 1],
+        ])
+
+        R = np.array([
+            [np.cos(theta), -np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1],
+        ])
+
+        self.transform = T @ R
+
+        T = np.array([
+            [1, 0, -pose[0]],
+            [0, 1, -pose[1]],
+            [0, 0, 1],
+        ])
+
+        R = np.array([
+            [np.cos(-theta), -np.sin(-theta), 0],
+            [np.sin(-theta), np.cos(-theta), 0],
+            [0, 0, 1],
+        ])
+
+        self.inverse_transform = R @ T
