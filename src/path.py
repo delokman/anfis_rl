@@ -29,7 +29,7 @@ class Path:
     def get_estimated_time(self, linear_velocity):
         return self.estimated_path_length / linear_velocity
 
-    def get_trajectory(self, robot):
+    def get_trajectory(self, robot, progress_bar=None):
         pos_x, pos_y = robot.get_pose()
 
         current_point = np.array(self.path[self.path_count])
@@ -56,6 +56,9 @@ class Path:
 
         if proj_len > 1:
             self.path_count += 1
+
+            if progress_bar is not None:
+                progress_bar.update()
 
         if self.path_count == self.path_length - 1:
             self.stop = True

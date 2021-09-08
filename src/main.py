@@ -7,6 +7,7 @@ import os
 import random
 
 import matplotlib
+from tqdm import tqdm
 
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
@@ -167,75 +168,76 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal):
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                          rewards_cummulative, checkpoint, i))
 
-    while not rospy.is_shutdown():
-        while pauser.pause:
-            if not rospy.is_shutdown():
-                sleep_rate.sleep()
-            else:
-                rospy.signal_shutdown("Requesting shutdown but in e-stop mode")
+    with tqdm(total=path.path_length) as pbar:
+        while not rospy.is_shutdown():
+            while pauser.pause:
+                if not rospy.is_shutdown():
+                    sleep_rate.sleep()
+                else:
+                    rospy.signal_shutdown("Requesting shutdown but in e-stop mode")
 
-        current_point, target_point, future_point, stop = path.get_trajectory(jackal)
+            current_point, target_point, future_point, stop = path.get_trajectory(jackal, pbar)
 
-        if stop:
-            print("STOP")
-            break
+            if stop:
+                print("STOP")
+                break
 
-        difference = rospy.get_time() - start_time
+            difference = rospy.get_time() - start_time
 
-        if difference >= timeout_time:
-            print("Exceeded timeout returning to checkpoint")
+            if difference >= timeout_time:
+                print("Exceeded timeout returning to checkpoint")
 
-            print("Reloading from save,", checkpoint.checkpoint_location)
-            checkpoint.reload(agent)
-            break
-
-        path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
-
-        dist_e, theta_far, theta_near = path_errors
-
-        if np.isfinite(dist_e):
-            distance_errors.append(dist_e)
-            theta_far_errors.append(theta_far)
-            theta_near_errors.append(theta_near)
-
-            if not params['simulation'] and dist_e > 4:
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
                 break
-        else:
-            print("Error!!!", path_errors)
-            print("Reloading from save,", checkpoint.checkpoint_location)
-            checkpoint.reload(agent)
-            break
 
-        path_errors = np.array(path_errors)
+            path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
 
-        #   for ddpg model
-        control_law = agent.get_action(path_errors)
-        control_law = control_law.item() * params['control_mul']
+            dist_e, theta_far, theta_near = path_errors
 
-        if not np.isfinite(control_law):
-            print("Error for control law resetting")
-            print("Reloading from save,", checkpoint.checkpoint_location)
-            checkpoint.reload(agent)
+            if np.isfinite(dist_e):
+                distance_errors.append(dist_e)
+                theta_far_errors.append(theta_far)
+                theta_near_errors.append(theta_near)
 
-        if control_law > max_yaw_rate:
-            control_law = max_yaw_rate
-        if control_law < -max_yaw_rate:
-            control_law = -max_yaw_rate
+                if not params['simulation'] and dist_e > 4:
+                    print("Reloading from save,", checkpoint.checkpoint_location)
+                    checkpoint.reload(agent)
+                    break
+            else:
+                print("Error!!!", path_errors)
+                print("Reloading from save,", checkpoint.checkpoint_location)
+                checkpoint.reload(agent)
+                break
 
-        jackal.control_law = control_law
+            path_errors = np.array(path_errors)
 
-        rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
-        rewards_cummulative.append(rewards)
+            #   for ddpg model
+            control_law = agent.get_action(path_errors)
+            control_law = control_law.item() * params['control_mul']
 
-        if update_step % params['update_rate'] == 0:
-            agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e)
+            if not np.isfinite(control_law):
+                print("Error for control law resetting")
+                print("Reloading from save,", checkpoint.checkpoint_location)
+                checkpoint.reload(agent)
 
-        update_step += 1
-        # print(control_law)
-        jackal.pub_motion()
-        rate.sleep()
+            if control_law > max_yaw_rate:
+                control_law = max_yaw_rate
+            if control_law < -max_yaw_rate:
+                control_law = -max_yaw_rate
+
+            jackal.control_law = control_law
+
+            rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
+            rewards_cummulative.append(rewards)
+
+            if update_step % params['update_rate'] == 0:
+                agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e)
+
+            update_step += 1
+            # print(control_law)
+            jackal.pub_motion()
+            rate.sleep()
 
     del rospy.core._client_shutdown_hooks[-1]
 
