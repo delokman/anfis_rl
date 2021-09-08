@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import rospy
 import torch
 from geometry_msgs.msg import Twist
@@ -78,3 +79,28 @@ class Jackal:
 
         print("Connected to Publisher")
 
+    def reset(self):
+        self._linear_velocity = 1.5
+        self.x = 0.0
+        self.y = 0.0
+        self.q1 = 0.0
+
+        self.q2 = 0.0
+        self.q3 = 0.0
+        self.q4 = 0.0
+        self.current_angle = 0.0
+        self._control_law = 0.0
+        self.stop = False
+        self.twist = Twist()
+
+    def clear_pose(self):
+        self.robot_path = []
+
+    def inverse_transform_poses(self, path):
+        poses = []
+
+        for p in self.robot_path:
+            p = np.array([*p, 1])
+            poses.append(path.inverse_transform @ p)
+
+        return poses
