@@ -35,7 +35,11 @@ git clone https://github.com/catkin/catkin_tools.git
 cd catkin_tools
 
 pip3 install -r requirements.txt --upgrade
+python3 setup.py install --record install_manifest.txt
+python3 setup.py develop
 
 [comment]: <> (python3 setup.py develop)
 
 git clone https://github.com/ros/roscpp_core
+
+run simulation.sh for best results
