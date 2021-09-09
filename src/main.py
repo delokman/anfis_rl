@@ -32,7 +32,7 @@ from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import predefined_anfis_model
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course
+from test_course import test_course, test_course2, hard_course, test_course3
 
 import rospkg
 
@@ -280,7 +280,8 @@ if __name__ == '__main__':
 
     # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-    test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+    # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+    test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
     extend_path(test_path)
 
     name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
