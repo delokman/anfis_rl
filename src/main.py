@@ -321,7 +321,7 @@ if __name__ == '__main__':
         'batch_size': 128,
         'update_rate': 100,
         'epoch_nums': 100,
-        'control_mul': 1. if is_simulation else 4.,
+        'control_mul': 1. if is_simulation else 1.,
         'simulation': is_simulation
     }
 
