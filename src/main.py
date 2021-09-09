@@ -24,7 +24,8 @@ from robot_localization.srv import SetPose
 
 from torch.utils.tensorboard import SummaryWriter
 
-from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, plot_fuzzy_variables
+from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, plot_fuzzy_variables, \
+    plot_critic_weights
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
@@ -76,6 +77,8 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative,
                         checkpoint, epoch):
+    plot_critic_weights(summary, agent, epoch)
+
     # plot
     test_path = np.array(path.path)
     robot_path = np.array(jackal.inverse_transform_poses(path))
@@ -289,6 +292,7 @@ if __name__ == '__main__':
 
     # agent.load_state_dict(torch.load('input'))
     plot_anfis_data(summary, -1, agent)
+    plot_critic_weights(summary, agent, -1)
 
     loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
     agent.save_checkpoint(loc)
