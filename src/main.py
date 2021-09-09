@@ -312,9 +312,12 @@ if __name__ == '__main__':
 
     print("Is a simulation:", is_simulation)
 
-    noise = OUNoise(np.array([
-        [-4, 4],
-    ]))
+    if is_simulation:
+        noise = OUNoise(np.array([
+            [-4, 4],
+        ]))
+    else:
+        noise = None
 
     params = {
         'linear_vel': 1.5,
