@@ -297,7 +297,7 @@ if __name__ == '__main__':
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
     agent = DDPGAgent(3, 1, predefined_anfis_model())
-    agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
+    # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
     plot_anfis_data(summary, -1, agent)
