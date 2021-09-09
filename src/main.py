@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
+from rl.noise import OUNoise
 from utils import add_hparams
 
 matplotlib.use('Agg')
@@ -134,7 +135,7 @@ def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_er
                         rewards_cummulative, checkpoint, epoch)
 
 
-def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal):
+def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None):
     print(f"EPOCH {i}")
     reset_world(params['simulation'])
     pauser.wait_for_publisher()
@@ -170,6 +171,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal):
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                          rewards_cummulative, checkpoint, i))
+
+    if noise is not None:
+        noise.reset()
 
     with tqdm(total=path.path_length) as pbar:
         while not rospy.is_shutdown():
@@ -217,6 +221,10 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal):
 
             #   for ddpg model
             control_law = agent.get_action(path_errors)
+
+            if noise is not None:
+                action = noise.get_action(action, update_step)
+
             control_law = control_law.item() * params['control_mul']
 
             if not np.isfinite(control_law):
@@ -303,6 +311,12 @@ if __name__ == '__main__':
 
     print("Is a simulation:", is_simulation)
 
+    noise = OUNoise(np.array([
+        [-5, 5],
+        [-np.pi, np.pi],
+        [-np.pi, np.pi]
+    ]))
+
     params = {
         'linear_vel': 1.5,
         'batch_size': 128,
@@ -322,6 +336,6 @@ if __name__ == '__main__':
     jackal = Jackal()
 
     for i in range(params['epoch_nums']):
-        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal)
+        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
