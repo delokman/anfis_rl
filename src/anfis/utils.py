@@ -194,10 +194,7 @@ def plot_summary_results(summary: SummaryWriter, y_predicted, y_actual):
 
 def plot_critic_weights(summary, model, epoch):
     critic = model.critic
-    l1 = critic.linear1
-    l2 = critic.linear2
-    l3 = critic.linear3
 
-    for name, layer in zip(['l1', 'l2', 'l3'], [l1, l2, l3]):
-        summary.add_histogram(f"{name}/bias", layer.bias, global_step=epoch)
-        summary.add_histogram(f"{name}/weight", layer.weight, global_step=epoch)
+    for name, layer in critic.named_parameters():
+        name = name.replace(".", "/")
+        summary.add_histogram(name, layer, global_step=epoch)
