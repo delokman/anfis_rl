@@ -223,7 +223,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             control_law = agent.get_action(path_errors)
 
             if noise is not None:
-                action = noise.get_action(action, update_step)
+                control_law = noise.get_action(control_law, update_step)
 
             control_law = control_law.item() * params['control_mul']
 
@@ -312,9 +312,7 @@ if __name__ == '__main__':
     print("Is a simulation:", is_simulation)
 
     noise = OUNoise(np.array([
-        [-5, 5],
-        [-np.pi, np.pi],
-        [-np.pi, np.pi]
+        [-4, 4],
     ]))
 
     params = {
