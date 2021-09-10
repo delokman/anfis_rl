@@ -85,6 +85,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     robot_path = np.array(jackal.inverse_transform_poses(path))
 
     fig, ax = plt.subplots()
+    ax.set_aspect('equal')
     ax.plot(test_path[:-1, 0], test_path[:-1, 1])
     ax.plot(robot_path[:, 0], robot_path[:, 1])
 
