@@ -88,6 +88,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     ax.set_aspect('equal')
     ax.plot(test_path[:-1, 0], test_path[:-1, 1])
     ax.plot(robot_path[:, 0], robot_path[:, 1])
+    fig.tight_layout()
 
     distance_errors = np.asarray(distance_errors)
 
@@ -104,19 +105,23 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
     fig, ax = plt.subplots()
     ax.plot(x, distance_errors)
+    fig.tight_layout()
     summary.add_figure("Graphs/Distance Errors", fig, global_step=epoch)
 
     fig, ax = plt.subplots()
     ax.plot(x, theta_near_errors)
+    fig.tight_layout()
     summary.add_figure("Graphs/Theta Near Errors", fig, global_step=epoch)
 
     fig, ax = plt.subplots()
     ax.plot(x, theta_far_errors)
+    fig.tight_layout()
     summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
     x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
+    fig.tight_layout()
     summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
