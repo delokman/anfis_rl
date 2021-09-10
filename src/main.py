@@ -95,7 +95,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
     print("MAE:", dist_error_mae, "RSME:", dist_error_rsme)
 
-    summary.add_figure("Gazebo/Plot", fig, global_step=epoch)
+    summary.add_figure("Path/Plot", fig, global_step=epoch)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
     plot_anfis_data(summary, epoch, agent)
@@ -104,20 +104,20 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
     fig, ax = plt.subplots()
     ax.plot(x, distance_errors)
-    summary.add_figure("Gazebo/Graphs/Distance Errors", fig, global_step=epoch)
+    summary.add_figure("Graphs/Distance Errors", fig, global_step=epoch)
 
     fig, ax = plt.subplots()
     ax.plot(x, theta_near_errors)
-    summary.add_figure("Gazebo/Graphs/Theta Near Errors", fig, global_step=epoch)
+    summary.add_figure("Graphs/Theta Near Errors", fig, global_step=epoch)
 
     fig, ax = plt.subplots()
     ax.plot(x, theta_far_errors)
-    summary.add_figure("Gazebo/Graphs/Theta Far Errors", fig, global_step=epoch)
+    summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
     x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
-    summary.add_figure("Gazebo/Rewards", fig, global_step=epoch)
+    summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
