@@ -12,7 +12,7 @@ from tqdm import tqdm
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
 from rl.noise import OUNoise
-from utils import add_hparams
+from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
 
@@ -360,6 +360,8 @@ if __name__ == '__main__':
     pauser = BluetoothEStop()
 
     jackal = Jackal()
+
+    summary.add_text('Rules', markdown_rule_table(agent.actor))
 
     for i in range(params['epoch_nums']):
         epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
