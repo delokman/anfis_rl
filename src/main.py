@@ -30,7 +30,7 @@ from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, 
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
-from rl.predifined_anfis import predefined_anfis_model
+from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course, test_course2, hard_course, test_course3
 
@@ -224,7 +224,10 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
             path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
 
-            dist_e, theta_far, theta_near = path_errors
+            if len(path_errors) == 3:
+                dist_e, theta_far, theta_near = path_errors
+            elif len(path_errors) == 5:
+                _, dist_e, _, theta_far, theta_near = path_errors
 
             if np.isfinite(dist_e):
                 distance_errors.append(dist_e)
@@ -320,7 +323,7 @@ if __name__ == '__main__':
     summary = SummaryWriter(f'{package_location}/runs/{name}')
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-    agent = DDPGAgent(3, 1, predefined_anfis_model())
+    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model())
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))

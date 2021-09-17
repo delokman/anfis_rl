@@ -9,6 +9,8 @@ def fuzzy_error(curr, tar, future, robot):
     x, y = robot.get_pose()
     current_angle = robot.get_angle()
 
+    pose = np.array([x, y])
+
     A = np.array([[curr[1] - tar[1], tar[0] - curr[0]], [tar[0] - curr[0], tar[1] - curr[1]]])
     b = np.array([[tar[0] * curr[1] - curr[0] * tar[1]], [x * (tar[0] - curr[0]) + y * (tar[1] - curr[1])]])
     proj = np.matmul(np.linalg.inv(A), b)
@@ -16,18 +18,25 @@ def fuzzy_error(curr, tar, future, robot):
 
     side = np.sign(d)
 
-    distance_line = np.linalg.norm(np.array([x, y]) - proj.T, 2) * side  ##########################check this
+    distance_line = np.linalg.norm(pose - proj.T, 2) * side  ##########################check this
+    distance_target = np.linalg.norm(tar - pose)
 
-    far_target = np.array([0.9 * proj[0] + 0.1 * tar[0], 0.9 * proj[1] + 0.1 * tar[1]])
+    k = 0.9
+
+    far_target = np.array([k * proj[0] + (1 - k) * tar[0], k * proj[1] + (1 - k) * tar[1]])
     th1 = math.atan2(far_target[1] - y, far_target[0] - x)
     th2 = math.atan2(tar[1] - curr[1], tar[0] - curr[0])
     th3 = math.atan2(future[1] - tar[1], future[0] - tar[0])
+
     theta_far = th1 - current_angle
     theta_near = th2 - current_angle
+    theta_lookahead = th3 - current_angle
+
     theta_far = wraptopi(theta_far)
     theta_near = wraptopi(theta_near)
+    theta_lookahead = wraptopi(theta_lookahead)
 
-    return [distance_line, theta_far, theta_near]
+    return [distance_target, distance_line, theta_lookahead, theta_far, theta_near]
 
 
 def reward(errors, linear_vel, angular_vel):
@@ -43,7 +52,10 @@ def reward(errors, linear_vel, angular_vel):
     steering_penalty_gain = 1
     steering_iwrt_DE = 4
 
-    dis, theta_far, theta_near = errors
+    if errors.shape[0] == 5:
+        _, dis, _, theta_far, theta_near = errors
+    else:
+        dis, theta_far, theta_near = errors
 
     dis_temp = np.abs(dis) / 1.0
     dis = (math.pow(dis_temp, DE_penalty_shape) + dis_temp) * -DE_penalty_gain
