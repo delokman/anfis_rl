@@ -234,3 +234,67 @@ class JointTrapMembershipV2(JointMembership):
         right_edge = torch.where(flat_area, ones, torch.where(slopped, slopped_value, zeros))
 
         return torch.cat([left_edge, left, center, right, right_edge], dim=1)
+
+
+class JointSingleConstrainedEdgeMembership(JointMembership):
+    def required_dtype(self):
+        return torch.float
+
+    def left_x(self):
+        return self.center - self.half_width()
+
+    def half_width(self):
+        return 1 / 2 * self.slope
+
+    def right_x(self):
+        return self.center + self.half_width()
+
+    def __init__(self, center, slope, constant_center=False, min_slope=0.01):
+        super().__init__()
+        self.slope_constraint = torch.tensor(min_slope, dtype=self.required_dtype())
+
+        if constant_center:
+            self.center = torch.tensor(center, dtype=self.required_dtype(), requires_grad=False)
+        else:
+            self.register_parameter('center', _mk_param(center, dtype=self.required_dtype()))
+
+        self.register_parameter('slope', _mk_param(slope, dtype=self.required_dtype()))
+
+        # FIXME Lol cheeky way to add backwards compatability
+        mf_definitions = OrderedDict()
+        mf_definitions["Close"] = self
+        mf_definitions["Far"] = self
+        self.mfdefs = mf_definitions
+
+    @property
+    def num_mfs(self):
+        return len(self.mfdefs)
+
+    def fuzzify(self, x):
+        output = self.forward(x)
+
+        return (
+            ('Close', output[:, 0]),
+            ("Far", output[:, 1]),
+        )
+
+    def forward(self, x):
+        slope = torch.abs(self.slope - self.slope_constraint) + self.slope_constraint
+        center = torch.abs(self.center)
+
+        slope_width = torch.reciprocal(slope)
+
+        x = x - center
+
+        ones = torch.ones_like(x, requires_grad=False)
+        zeros = torch.zeros_like(x, requires_grad=False)
+
+        flat_area = torch.greater(x, slope_width)
+        slopped = torch.greater_equal(x, 0)
+        slopped = (~flat_area) & slopped
+        slopped_value = slope * x
+
+        right = torch.where(flat_area, ones, torch.where(slopped, slopped_value, zeros))
+        left = 1 - right
+
+        return torch.cat([left, right], dim=1)
