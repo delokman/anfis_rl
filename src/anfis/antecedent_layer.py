@@ -223,10 +223,11 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     :return:
     """
 
+    # FIXME for rules with uneven indices number i.e sometimes 2 or sometimes 3, pad the lesser ones with duplicates
     variable_rule_index = [
-        (0, 2),
-        (0, 2),
-        (0, 2),
+        (0, 2, 0),
+        (0, 2, 0),
+        (0, 2, 0),
 
         (0, 1, 3),
         (0, 1, 3),
@@ -271,9 +272,9 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (0, 1, 3),
         (0, 1, 3),
 
-        (0, 2),
-        (0, 2),
-        (0, 2),
+        (0, 2, 0),
+        (0, 2, 0),
+        (0, 2, 0),
     ]
 
     '''
@@ -295,9 +296,9 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     4 = far right
     '''
     membership_indices = [
-        (0, 0),  # 1
-        (0, 1),  # 2
-        (0, 2),  # 3
+        (0, 0, 0),  # 1
+        (0, 1, 0),  # 2
+        (0, 2, 0),  # 3
 
         (1, 0, 0),  # 3
         (1, 0, 1),  # 3
@@ -343,9 +344,9 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (1, 6, 3),  # 3
         (1, 6, 4),  # 3
 
-        (0, 2),
-        (0, 3),
-        (0, 4),
+        (0, 2, 0),
+        (0, 3, 0),
+        (0, 4, 0),
     ]
 
     '''
