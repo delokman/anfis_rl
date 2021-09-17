@@ -119,7 +119,7 @@ class JointExprMembFunc(torch.nn.Module):
         return 'ExprMembFunc {} {} {} {}'.format(self.a, self.c1, self.c2, self.c3)
 
 
-class JointMembership(torch.nn.Module):
+class JointMembership(ABC, torch.nn.Module):
 
     def required_dtype(self):
         return torch.float
