@@ -349,8 +349,8 @@ if __name__ == '__main__':
     params = {
         'linear_vel': 1.5,
         'batch_size': 128,
-        'update_rate': 100,
-        'epoch_nums': 100,
+        'update_rate': 10,
+        'epoch_nums': 300,
         'control_mul': 1. if is_simulation else 1.,
         'simulation': is_simulation
     }
