@@ -1,7 +1,8 @@
 from anfis.antecedent_layer import dist_target_dist_per_theta_lookahead_theta_far_theta_near
 from anfis.consequent_layer import ConsequentLayerType
 from anfis.joint_mamdani_membership import JointSymmetricTriangleMembership, JointSymmetric9TriangleMembership
-from anfis.joint_membership_optimized import JointTrapMembershipV2
+from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleConstrainedEdgeMembership, \
+    Joint7TrapMembership
 from anfis.trainer import make_joint_anfis
 
 
@@ -40,7 +41,7 @@ def many_error_predefined_anfis_model():
     parameter_values = [
         [0, 1],
 
-        [0, 1.40812349319458, .1, 0.699826002120972],
+        [0, 2, .1, .2, .2],
         [0, 1, .6, 0.6],
         [0, 0.976657846180786, 0.27020001411438, 0.1281498670578],
         [0, 1.52320299803035, 0.081358410418034, 0.103709816932678],  #
@@ -49,17 +50,17 @@ def many_error_predefined_anfis_model():
     ]
 
     x_joint_definitons = [
-        ('distance_target', JointTrapMembershipV2(*parameter_values[0], constant_center=False)),
+        ('distance_target', JointSingleConstrainedEdgeMembership(*parameter_values[0], constant_center=False)),
 
-        ('distance_line', JointTrapMembershipV2(*parameter_values[0], constant_center=True)),
-        ('theta_lookahead', JointTrapMembershipV2(*parameter_values[1], constant_center=True)),
-        ('theta_far', JointTrapMembershipV2(*parameter_values[2], constant_center=True)),
-        ('theta_near', JointTrapMembershipV2(*parameter_values[2], constant_center=True)),
+        ('distance_line', Joint7TrapMembership(*parameter_values[1], constant_center=True)),
+        ('theta_lookahead', JointTrapMembershipV2(*parameter_values[2], constant_center=True)),
+        ('theta_far', JointTrapMembershipV2(*parameter_values[3], constant_center=True)),
+        ('theta_near', JointTrapMembershipV2(*parameter_values[4], constant_center=True)),
     ]
 
     output_names = ['angular_velocity']
 
-    mambani = JointSymmetric9TriangleMembership(*parameter_values[3], True,
+    mambani = JointSymmetric9TriangleMembership(*parameter_values[5], True,
                                                 x_joint_definitons[0][1].required_dtype())
 
     rules_type = ConsequentLayerType.MAMDANI
