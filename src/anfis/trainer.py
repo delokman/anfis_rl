@@ -212,8 +212,9 @@ def load_anfis(model, file):
         model.load_state_dict(data_dict)
 
 
-def make_joint_anfis(variable_joint_fuzzy_definitons, outputs, rules_type=ConsequentLayerType.PLAIN, mamdani_defs=None):
+def make_joint_anfis(variable_joint_fuzzy_definitons, outputs, rules_type=ConsequentLayerType.PLAIN, mamdani_defs=None,
+                     mamdani_ruleset=None):
     model = JointAnfisNet('Simple joint classifier', variable_joint_fuzzy_definitons, outputs, rules_type=rules_type,
-                          mamdani_defs=mamdani_defs)
+                          mamdani_defs=mamdani_defs, mamdani_ruleset=mamdani_ruleset)
 
     return model
