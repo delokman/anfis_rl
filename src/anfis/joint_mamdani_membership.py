@@ -119,7 +119,9 @@ class JointSymmetric9TriangleMembership(JointMamdaniMembership):
         return self.center + direction * (self.abs_cache['soft'] + self.abs_cache['normal'] + self.abs_cache['hard'])
 
     def get_very_hard(self, direction=1):
-        return self.center + direction * (self.abs_cache['soft'] + self.abs_cache['normal'] + self.abs_cache['hard'] + self.abs_cache['very_hard'])
+        return self.center + direction * (
+                self.abs_cache['soft'] + self.abs_cache['normal'] + self.abs_cache['hard'] +
+                self.abs_cache['very_hard'])
 
     def __init__(self, center, soft, normal, hard, very_hard, constant_center=True, dtype=torch.float) -> None:
         super().__init__()

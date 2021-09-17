@@ -1,4 +1,5 @@
 import copy
+import pathlib
 
 import numpy as np
 import torch
@@ -8,7 +9,6 @@ from torch.autograd import Variable
 from anfis.utils import save_fuzzy_membership_functions
 from rl.citic import Critic
 from rl.memory import Memory
-import pathlib
 
 
 class DDPGAgent(torch.nn.Module):

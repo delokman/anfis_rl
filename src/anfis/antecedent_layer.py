@@ -123,7 +123,6 @@ class MamdaniAntecedentLayer(torch.nn.Module):
                 (3, 4),  # 25
             ]
 
-
             '''
             0 = far left
             1 = left

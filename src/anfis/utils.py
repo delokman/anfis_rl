@@ -192,6 +192,7 @@ def plot_summary_results(summary: SummaryWriter, y_predicted, y_actual):
 
     summary.add_figure("Result/Results", fig)
 
+
 def plot_critic_weights(summary, model, epoch):
     critic = model.critic
 
