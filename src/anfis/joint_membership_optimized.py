@@ -241,13 +241,13 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
         return torch.float
 
     def left_x(self):
-        return self.center - self.half_width()
+        return torch.abs(self.center)
 
     def half_width(self):
-        return 1 / 2 * self.slope
+        return 1 / (2 * torch.abs(self.slope - self.slope_constraint) + self.slope_constraint)
 
     def right_x(self):
-        return self.center + self.half_width()
+        return self.left_x() + self.half_width() * 2
 
     def __init__(self, center, slope, constant_center=False, min_slope=0.01):
         super().__init__()
