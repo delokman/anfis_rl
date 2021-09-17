@@ -21,7 +21,7 @@ class DDPGAgent(torch.nn.Module):
         self.num_actions = num_outputs
         self.gamma = gamma
         self.tau = tau
-        self.curr_states = np.array([0, 0, 0])
+        self.curr_states = np.zeros(num_inputs)
         # Networks
         self.actor = anf
         self.actor_target = copy.deepcopy(anf)
