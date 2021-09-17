@@ -52,6 +52,12 @@ class DDPGAgent(torch.nn.Module):
         self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
 
+        for name, v in self.actor_optimizer.defaults.items():
+            self.input_params[f'actor_optim_{name}'] = v
+
+        for name, v in self.critic_optimizer.defaults.items():
+            self.input_params[f'critic_optim_{name}'] = v
+
         self.ordered_dict = torch.nn.ModuleDict()
         self.ordered_dict['actor'] = self.actor
         self.ordered_dict['actor_target'] = self.actor_target
