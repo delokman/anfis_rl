@@ -285,7 +285,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
-                                         rewards_cummulative, checkpoint, i)
+                                         rewards_cummulative, checkpoint, i, rule_weights)
 
     return dist_error_mae
 
