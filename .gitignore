@@ -265,3 +265,5 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 /runs/
+
+/src/runs/
