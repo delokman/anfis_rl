@@ -40,8 +40,13 @@ def markdown_rule_table(anfis):
 
     out_name = anfis.layer['consequent'].mamdani_defs.names
 
-    rules = ['| Rule ID | Membership 1 | Membership 2| Output |',
-             '| --------| ------------ | ----------- | ------ | ']
+    num_variable = [i + 1 for i in range(len(var_index[0]))]
+
+    title = "| Rule ID | " + "|".join([f"Membership {i}" for i in num_variable]) + " | Output |"
+    separator = "| -------- | " + "|".join([f"------" for _ in num_variable]) + " | ------ |"
+
+    rules = [title,
+             separator]
 
     for i in range(len(var_index)):
         temp = []
