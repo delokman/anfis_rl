@@ -353,6 +353,11 @@ if __name__ == '__main__':
 
     is_simulation = is_gazebo_simulation()
 
+    stop_epoch = 14
+
+    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=0.9, verbose=True)
+    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=0.9, verbose=True)
+
     print("Is a simulation:", is_simulation)
 
     if is_simulation:
@@ -384,5 +389,8 @@ if __name__ == '__main__':
 
     for i in range(params['epoch_nums']):
         epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
+        if i < stop_epoch:
+            scheduler1.step()
+            scheduler2.step()
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
