@@ -71,7 +71,7 @@ def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_e
     new_state = np.array(new_state)
     agent.curr_states = new_state
     agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
-    if len(agent.memory) > batch_size and np.abs(dis_error) > 0.10:
+    if len(agent.memory) > batch_size:
         agent.update(batch_size)
 
         if rule_weights is not None:
