@@ -339,7 +339,7 @@ if __name__ == '__main__':
     summary = SummaryWriter(f'{package_location}/runs/{name}')
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model())
+    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32)
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
