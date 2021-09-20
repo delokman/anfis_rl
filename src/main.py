@@ -157,7 +157,7 @@ def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_er
                         rewards_cummulative, checkpoint, epoch, rule_weights)
 
 
-def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None):
+def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None, show_gradients=False):
     rule_weights = []
 
     print(f"EPOCH {i}")
@@ -198,6 +198,12 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     if noise is not None:
         noise.reset()
+
+    if show_gradients:
+        grad_distribution = {}
+        grad_distribution['all'] = []
+        for name, p in agent.actor.named_parameters():
+            grad_distribution[name] = []
 
     with tqdm(total=path.path_length) as pbar:
         while not rospy.is_shutdown():
@@ -272,6 +278,11 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             if update_step % params['update_rate'] == 0:
                 agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e, rule_weights)
 
+                if show_gradients and len(agent.memory) > params['batch_size']:
+                    for name, p in agent.actor.named_parameters():
+                        grad_distribution['all'].append(p.grad)
+                        grad_distribution[name].append(p.grad)
+
             update_step += 1
             # print(control_law)
             jackal.pub_motion()
@@ -282,6 +293,11 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     jackal.linear_velocity = 0
     jackal.control_law = 0
     jackal.pub_motion()
+
+    if show_gradients:
+        for name, values in grad_distribution.items():
+            dist = torch.stack(values)
+            summary.add_histogram(f"Gradients/{name}", dist, global_step=i)
 
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
