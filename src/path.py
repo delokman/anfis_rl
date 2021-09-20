@@ -98,7 +98,7 @@ class Path:
 
             return points
 
-    def set_initial_state(self, jackal):
+    def set_initial_state(self, jackal, y_shift=0):
         pose = jackal.get_pose()
         theta = jackal.get_angle()
         print(pose, theta)
@@ -117,7 +117,7 @@ class Path:
 
         T = np.array([
             [1, 0, pose[0]],
-            [0, 1, pose[1]],
+            [0, 1, pose[1] + y_shift],
             [0, 0, 1],
         ])
 
@@ -131,7 +131,7 @@ class Path:
 
         T = np.array([
             [1, 0, -pose[0]],
-            [0, 1, -pose[1]],
+            [0, 1, -pose[1] - y_shift],
             [0, 0, 1],
         ])
 
