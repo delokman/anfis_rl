@@ -7,11 +7,11 @@ import os
 import random
 
 import matplotlib
+from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
-from rl.noise import OUNoise
 from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
@@ -390,8 +390,8 @@ if __name__ == '__main__':
 
     for i in range(params['epoch_nums']):
         epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
-        if i < stop_epoch:
-            scheduler1.step()
-            scheduler2.step()
+        # if i < stop_epoch:
+        scheduler1.step()
+        scheduler2.step()
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
