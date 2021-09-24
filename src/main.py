@@ -339,7 +339,8 @@ if __name__ == '__main__':
     summary = SummaryWriter(f'{package_location}/runs/{name}')
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32)
+    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+                      actor_learning_rate=1e-4)
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
@@ -355,8 +356,8 @@ if __name__ == '__main__':
 
     stop_epoch = 14
 
-    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=0.9, verbose=True)
-    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=0.9, verbose=True)
+    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=.95, verbose=True)
+    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=.95, verbose=True)
 
     print("Is a simulation:", is_simulation)
 
@@ -370,11 +371,13 @@ if __name__ == '__main__':
 
     params = {
         'linear_vel': 1.5,
-        'batch_size': 128,
+        'batch_size': 32,
         'update_rate': 10,
         'epoch_nums': 300,
         'control_mul': 1. if is_simulation else 1.,
-        'simulation': is_simulation
+        'simulation': is_simulation,
+        'actor_decay': scheduler2.gamma,
+        'critic_decay': scheduler1.gamma
     }
 
     params.update(agent.input_params)
