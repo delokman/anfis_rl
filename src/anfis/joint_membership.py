@@ -120,15 +120,13 @@ class JointExprMembFunc(torch.nn.Module):
 
 
 class JointMembership(ABC, torch.nn.Module):
-    def __int__(self):
-        self.is_cuda = False
-
     def required_dtype(self):
         return torch.float
 
     def __init__(self):
         super().__init__()
         self.padding = 0
+        self.is_cuda = False
 
     @property
     def num_mfs(self):

@@ -8,6 +8,9 @@ from anfis.joint_membership import _mk_param, JointMembership
 
 
 class JointMembershipOptimized(JointMembership):
+    def __init__(self):
+        super(JointMembershipOptimized, self).__init__()
+
     @abstractmethod
     def compute(self, x):
         pass
