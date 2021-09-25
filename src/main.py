@@ -88,7 +88,13 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
         averages = torch.mean(torch.mean(torch.stack(rule_weights), dim=1), dim=0)
         rule_ids = [_ for _ in range(averages.shape[0])]
-        ax.bar(rule_ids, averages.detach().numpy())
+
+        if agent.use_cuda:
+            averages = averages.cpu().detach().numpy()
+        else:
+            averages = averages.detach().numpy()
+
+        ax.bar(rule_ids, averages)
         ax.set_xticks(rule_ids)
         ax.set_ylabel('Rule weight')
         ax.set_xlabel('Rule')

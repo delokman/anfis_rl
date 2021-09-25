@@ -16,6 +16,8 @@ class DDPGAgent(torch.nn.Module):
                  critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000):
         # Params
         super().__init__()
+        self.use_cuda = torch.cuda.is_available()
+        # self.use_cuda = False
 
         self.num_states = num_inputs
         self.num_actions = num_outputs
@@ -58,6 +60,18 @@ class DDPGAgent(torch.nn.Module):
         for name, v in self.critic_optimizer.defaults.items():
             self.input_params[f'critic_optim_{name}'] = v
 
+        if self.use_cuda:
+            self.actor.cuda()
+            # self.actor.cuda_memberships()
+            # self.actor.cuda_mamdani()
+
+            self.actor_target.cuda()
+            # self.actor_target.cuda_memberships()
+            # self.actor_target.cuda_mamdani()
+
+            self.critic.cuda()
+            self.critic_target.cuda()
+
         self.ordered_dict = torch.nn.ModuleDict()
         self.ordered_dict['actor'] = self.actor
         self.ordered_dict['actor_target'] = self.actor_target
@@ -91,8 +105,15 @@ class DDPGAgent(torch.nn.Module):
 
     def get_action(self, state):
         state = Variable(torch.from_numpy(state).float().unsqueeze(0))
+        if self.use_cuda:
+            state = state.cuda()
+
         action = self.actor.forward(state)
-        action = action.detach().numpy()[0, 0]
+
+        if self.use_cuda:
+            action = action.cpu().detach().numpy()[0, 0]
+        else:
+            action = action.detach().numpy()[0, 0]
         return action
 
     def update(self, batch_size):
@@ -103,6 +124,12 @@ class DDPGAgent(torch.nn.Module):
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
         actions = torch.reshape(actions, (batch_size, 1))
+
+        if self.use_cuda:
+            states = states.cuda()
+            actions = actions.cuda()
+            rewards = rewards.cuda()
+            next_states = next_states.cuda()
 
         # Critic loss
         Qvals = self.critic.forward(states, actions)

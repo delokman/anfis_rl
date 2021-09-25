@@ -13,11 +13,14 @@ class JointMembershipOptimized(JointMembership):
         pass
 
     def forward(self, x):
+        if self.is_cuda and not x.is_cuda:
+            x = x.cuda()
+
         y_pred = self.compute(x)
 
         if self.padding > 0:
             y_pred = torch.cat([y_pred,
-                                torch.zeros(x.shape[0], self.padding)], dim=1)
+                                torch.zeros(x.shape[0], self.padding, device='cuda' if self.is_cuda else 'cpu')], dim=1)
 
         return y_pred
 
