@@ -17,7 +17,7 @@ class DDPGAgent(torch.nn.Module):
         # Params
         super().__init__()
         self.use_cuda = torch.cuda.is_available()
-        # self.use_cuda = False
+        self.use_cuda = False
 
         self.num_states = num_inputs
         self.num_actions = num_outputs
