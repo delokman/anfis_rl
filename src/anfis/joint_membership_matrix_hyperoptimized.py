@@ -182,13 +182,13 @@ class JointSingleConstrainedEdgeMembershipV3(JointMembershipHyperOptimized):
         A = torch.tensor([
             [-slope],
             [slope]
-        ])
+        ], device=x.device)
 
         a = center * slope
         b = torch.tensor([
             [1 + a],
             [-a]
-        ])
+        ], device=x.device)
 
         return torch.addmm(b, A, x.T).T
 
