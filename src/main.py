@@ -174,7 +174,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     reset_world(params['simulation'])
     pauser.wait_for_publisher()
 
-    rate = rospy.Rate(1000)
+    rate = rospy.Rate(60)
 
     jackal.clear_pose()
     path = Path(path)
@@ -385,8 +385,8 @@ if __name__ == '__main__':
     params = {
         'linear_vel': 1.5,
         'batch_size': 32,
-        'update_rate': 10,
-        'epoch_nums': 300,
+        'update_rate': 1,
+        'epoch_nums': 100,
         'control_mul': 1. if is_simulation else 1.,
         'simulation': is_simulation,
         'actor_decay': scheduler2.gamma,
