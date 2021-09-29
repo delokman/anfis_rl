@@ -65,17 +65,20 @@ def plot_anfis_data(summary, epoch, agent):
     plot_fuzzy_variables(summary, anfis, epoch)
 
 
-def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_error, rule_weights=None):
-    ####do this every 0.075 s
-    state = agent.curr_states
-    new_state = np.array(new_state)
-    agent.curr_states = new_state
-    agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
+def agent_update(agent, batch_size, dis_error, rule_weights=None):
     if len(agent.memory) > batch_size:
         agent.update(batch_size)
 
         if rule_weights is not None:
             rule_weights.append(agent.actor.weights)
+
+
+def add_to_memory(new_state, rewards, control_law, agent, done):
+    ####do this every 0.075 s
+    state = agent.curr_states
+    new_state = np.array(new_state)
+    agent.curr_states = new_state
+    agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
 
 
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
@@ -281,8 +284,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
             rewards_cummulative.append(rewards)
 
+            add_to_memory(path_errors, rewards, control_law, agent, done)
             if update_step % params['update_rate'] == 0:
-                agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e, rule_weights)
+                agent_update(agent, params['batch_size'], dist_e, rule_weights)
 
                 if show_gradients and len(agent.memory) > params['batch_size']:
                     for name, p in agent.actor.named_parameters():
