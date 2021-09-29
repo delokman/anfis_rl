@@ -30,7 +30,8 @@ from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, 
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
-from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model
+from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model, \
+    optimized_many_error_predefined_anfis_model
 from rl.utils import fuzzy_error, reward
 from test_course import test_course, test_course2, hard_course, test_course3
 
@@ -349,7 +350,9 @@ if __name__ == '__main__':
     summary = SummaryWriter(f'{package_location}/runs/{name}')
     os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-    agent = DDPGAgent(5, 1, many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+    # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+    #                   actor_learning_rate=1e-4)
+    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
                       actor_learning_rate=1e-4)
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
