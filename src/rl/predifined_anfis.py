@@ -1,6 +1,10 @@
 from anfis.antecedent_layer import dist_target_dist_per_theta_lookahead_theta_far_theta_near
 from anfis.consequent_layer import ConsequentLayerType
 from anfis.joint_mamdani_membership import JointSymmetricTriangleMembership, JointSymmetric9TriangleMembership
+from anfis.joint_membership_hyperoptimized import JointSingleConstrainedEdgeMembershipV2, Joint7TrapMembershipV2, \
+    JointTrapMembershipV3
+from anfis.joint_membership_matrix_hyperoptimized import JointSingleConstrainedEdgeMembershipV3, Joint7TrapMembershipV3, \
+    JointTrapMembershipV4
 from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleConstrainedEdgeMembership, \
     Joint7TrapMembership
 from anfis.trainer import make_joint_anfis
@@ -56,6 +60,42 @@ def many_error_predefined_anfis_model():
         ('theta_lookahead', JointTrapMembershipV2(*parameter_values[2], constant_center=True)),
         ('theta_far', JointTrapMembershipV2(*parameter_values[3], constant_center=True)),
         ('theta_near', JointTrapMembershipV2(*parameter_values[4], constant_center=True)),
+    ]
+
+    output_names = ['angular_velocity']
+
+    mambani = JointSymmetric9TriangleMembership(*parameter_values[5], True,
+                                                x_joint_definitons[0][1].required_dtype())
+
+    rules_type = ConsequentLayerType.MAMDANI
+
+    ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near()
+
+    model = make_joint_anfis(x_joint_definitons, output_names, rules_type=rules_type, mamdani_defs=mambani,
+                             mamdani_ruleset=ruleset)
+
+    return model
+
+
+def optimized_many_error_predefined_anfis_model():
+    parameter_values = [
+        [0, 1],
+
+        [0, 2, .1, .2, .2],
+        [0, 1, .6, 0.6],
+        [0, 0.976657846180786, 0.27020001411438, 0.1281498670578],
+        [0, 1.52320299803035, 0.081358410418034, 0.103709816932678],  #
+
+        [0, 1, 1, 1, 1]
+    ]
+
+    x_joint_definitons = [
+        ('distance_target', JointSingleConstrainedEdgeMembershipV2(*parameter_values[0], constant_center=False)),
+
+        ('distance_line', Joint7TrapMembershipV2(*parameter_values[1], constant_center=True)),
+        ('theta_lookahead', JointTrapMembershipV3(*parameter_values[2], constant_center=True)),
+        ('theta_far', JointTrapMembershipV3(*parameter_values[3], constant_center=True)),
+        ('theta_near', JointTrapMembershipV3(*parameter_values[4], constant_center=True)),
     ]
 
     output_names = ['angular_velocity']
