@@ -104,7 +104,8 @@ class DDPGAgent(torch.nn.Module):
         self.critic_optimizer.load_state_dict(state_dicts['critic_optimizer'])
 
     def get_action(self, state):
-        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
+        state = torch.tensor(state, requires_grad=True, dtype=torch.float32).unsqueeze(0)
+#        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
         if self.use_cuda:
             state = state.cuda()
 
