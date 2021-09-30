@@ -153,7 +153,7 @@ class JointMembership(ABC, torch.nn.Module):
         """
         for mfname, mfdef in self.mfdefs.items():
             yvals = mfdef(x)
-            yield (mfname, yvals)
+            yield mfname, yvals
 
     def forward(self, x):
         """

@@ -69,7 +69,7 @@ def calc_error(y_pred, y_actual):
         ss_regression = torch.sum((y_actual - y_pred) ** 2)
         rsq = (1 - (ss_regression / ss_total)) * 100
 
-    return (tot_loss, rmse, perc_loss, rsq)
+    return tot_loss, rmse, perc_loss, rsq
 
 
 def test_anfis(model, data, show_plots=False):

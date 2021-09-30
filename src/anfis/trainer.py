@@ -123,7 +123,7 @@ def train_anfis_with(model, data, optimizer, criterion,
         # Print some progress information as the net is trained:
 
         if save_on_lowest_loss:
-            if (min_loss is None or min_loss > mse):
+            if min_loss is None or min_loss > mse:
                 min_loss = mse
                 save_epoch = t
                 new_model = model.state_dict()

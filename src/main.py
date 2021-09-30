@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+﻿#! /usr/bin/env python
 # coding=utf-8
 
 import datetime
@@ -210,8 +210,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
         noise.reset()
 
     if show_gradients:
-        grad_distribution = {}
-        grad_distribution['all'] = []
+        grad_distribution = {'all': []}
         for name, p in agent.actor.named_parameters():
             grad_distribution[name] = []
 

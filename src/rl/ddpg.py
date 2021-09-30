@@ -144,6 +144,11 @@ class DDPGAgent(torch.nn.Module):
         # update networks
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
+
+        # g = make_dot(policy_loss, dict(self.named_parameters()), None)
+        # g.view()
+        # sys.exit()
+
         self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
