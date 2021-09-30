@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import random
+import traceback
 
 import matplotlib
 from torch.optim.lr_scheduler import ExponentialLR
@@ -162,9 +163,13 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
              rewards_cummulative, checkpoint, epoch, rule_weights):
-    print("Shutting down by saving data epoch:", epoch)
-    summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                        rewards_cummulative, checkpoint, epoch, rule_weights)
+    try:
+        print("Shutting down by saving data epoch:", epoch)
+        summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                            rewards_cummulative, checkpoint, epoch, rule_weights)
+    except Exception:
+        print("Error saving summary data on shutdown")
+        traceback.print_exc()
 
 
 def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None, show_gradients=False):
