@@ -13,7 +13,7 @@ from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleC
 from anfis.matrix_fuzzy_layer import Matrix5ErrorJointFuzzifyLayer
 
 
-def test_membership(funcs):
+def test_membership(funcs, plot=False):
     with torch.no_grad():
         fv = funcs[0]
 
@@ -30,11 +30,13 @@ def test_membership(funcs):
         end = time.time()
         print("Default: ", end - start)
 
-        fig, ax = plt.subplots()
+        if plot:
+            fig, ax = plt.subplots()
+            ax.plot(x.cpu(), y_true.cpu())
 
-        # ax.plot(x.cpu(), y_true.cpu())
+        if plot:
+            fig, ax = plt.subplots()
 
-        fig, ax = plt.subplots()
         for i in range(1, len(funcs)):
             fv_i = funcs[i]
             start = time.time()
@@ -43,11 +45,13 @@ def test_membership(funcs):
 
             diff = y_true - y_i
 
-            # ax.plot(x.cpu(), y_i.cpu())
+            if plot:
+                ax.plot(x.cpu(), y_i.cpu())
 
             print(end - start, torch.abs(diff).sum().item())
 
-        # plt.show()
+        if plot:
+            plt.show()
 
 
 def cpu_run():
