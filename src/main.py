@@ -345,8 +345,13 @@ if __name__ == '__main__':
 
     print(name)
 
-    rospack = rospkg.RosPack()
-    package_location = rospack.get_path('anfis_rl')
+    is_simulation = is_gazebo_simulation()
+
+    if is_simulation:
+        package_location = '/home/auvsl/python3_ws/src/anfis_rl'
+    else:
+        rospack = rospkg.RosPack()
+        package_location = rospack.get_path('anfis_rl')
 
     print("Package Location:", package_location)
 
@@ -367,8 +372,6 @@ if __name__ == '__main__':
     agent.save_checkpoint(loc)
 
     checkpoint_saver = LowestCheckpoint()
-
-    is_simulation = is_gazebo_simulation()
 
     stop_epoch = 14
 
@@ -412,5 +415,6 @@ if __name__ == '__main__':
         # if i < stop_epoch:
         scheduler1.step()
         scheduler2.step()
+        # sys.exit()
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
