@@ -4,7 +4,6 @@ import pathlib
 import numpy as np
 import torch
 from torch import optim
-from torch.autograd import Variable
 
 from anfis.utils import save_fuzzy_membership_functions
 from rl.citic import Critic

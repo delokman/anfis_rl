@@ -3,8 +3,6 @@ from anfis.consequent_layer import ConsequentLayerType
 from anfis.joint_mamdani_membership import JointSymmetricTriangleMembership, JointSymmetric9TriangleMembership
 from anfis.joint_membership_hyperoptimized import JointSingleConstrainedEdgeMembershipV2, Joint7TrapMembershipV2, \
     JointTrapMembershipV3
-from anfis.joint_membership_matrix_hyperoptimized import JointSingleConstrainedEdgeMembershipV3, Joint7TrapMembershipV3, \
-    JointTrapMembershipV4
 from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleConstrainedEdgeMembership, \
     Joint7TrapMembership
 from anfis.trainer import make_joint_anfis
