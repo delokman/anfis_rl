@@ -319,7 +319,11 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
 def extend_path(path):
     before_end, end = np.array(path[-2]), np.array(path[-1])
-    after_end = (end - before_end) + end
+
+    diff = (end - before_end)
+    diff /= np.linalg.norm(diff)
+
+    after_end = diff * 10 + end
 
     path.append(after_end)
 
