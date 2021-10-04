@@ -1,5 +1,21 @@
 # ROS ANFIS RL
 
+<p align="center">
+    <a href="https://github.com/AUVSL/anfis_rl/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/AUVSL/anfis_rl" /></a>
+    <a href="https://github.com/AUVSL/anfis_rl/pulse" alt="Activity">
+        <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/AUVSL/anfis_rl"></a>
+    <a href="https://github.com/AUVSL/anfis_rl/stargazers">
+        <img alt="Stars" src="https://img.shields.io/github/stars/AUVSL/anfis_rl"></a>
+    <a href="https://github.com/AUVSL/anfis_rl/network/members">
+        <img alt="Forks" src="https://img.shields.io/github/forks/AUVSL/anfis_rl"></a>
+    <a href="https://github.com/AUVSL/anfis_rl/issues">
+        <img alt="Issues" src="https://img.shields.io/github/issues/AUVSL/anfis_rl"></a>
+    <a href="./LICENSE" alt="Activity">
+        <img alt="GitHub" src="https://img.shields.io/github/license/AUVSL/anfis_rl"></a>
+</p>
+
+
 ## Activate the environment:
 
 run: `source ../../py3venv/bin/activate`
