@@ -31,7 +31,7 @@ from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course, test_course3
+from test_course import test_course, test_course2, hard_course, test_course3, test_8_shape
 
 import rospkg
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     print("Using INITIAL:", first_ckp)
     print("Using BEST:", best_ckp)
 
-    path_defintions = [test_course, test_course2, test_course3, hard_course]
+    path_defintions = [test_course, test_course2, test_course3, test_8_shape, hard_course]
 
     pauser = BluetoothEStop()
 
