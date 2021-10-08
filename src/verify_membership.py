@@ -1,8 +1,9 @@
-import sys
+import datetime
 import time
 
 import matplotlib.pyplot as plt
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from anfis.joint_membership_hyperoptimized import JointTrapMembershipV3, JointSingleConstrainedEdgeMembershipV2, \
     Joint7TrapMembershipV2
@@ -10,10 +11,9 @@ from anfis.joint_membership_matrix_hyperoptimized import JointTrapMembershipV4, 
     Joint7TrapMembershipV3
 from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleConstrainedEdgeMembership, \
     Joint7TrapMembership
-from anfis.matrix_fuzzy_layer import Matrix5ErrorJointFuzzifyLayer
 
 
-def test_membership(funcs, plot=False):
+def test_membership(funcs, summary=None, plot=False):
     with torch.no_grad():
         fv = funcs[0]
 
@@ -40,6 +40,17 @@ def test_membership(funcs, plot=False):
         for i in range(1, len(funcs)):
             fv_i = funcs[i]
             start = time.time()
+
+            # with torch.profiler.profile(
+            #         activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            #         schedule=torch.profiler.schedule(wait=2, warmup=5, active=50),
+            #         on_trace_ready=torch.profiler.tensorboard_trace_handler(e.get_logdir()),
+            #         record_shapes=True,
+            #         with_stack=True, profile_memory=False, with_flops=True) as prof:
+            #     for _ in range(2 + 5 + 50):
+            #         y_i = fv_i(x)
+            #         prof.step()
+
             y_i = fv_i(x)
             end = time.time()
 
@@ -54,7 +65,7 @@ def test_membership(funcs, plot=False):
             plt.show()
 
 
-def cpu_run():
+def cpu_run(summary=None):
     print("USING CPU")
     fv = JointTrapMembershipV2(1, 1, 1, 1)
     fv2 = JointTrapMembershipV3(1, 1, 1, 1)
@@ -78,10 +89,10 @@ def cpu_run():
 
     for name, l in zip(names, [a1, a2, a3]):
         print(name)
-        test_membership(l)
+        test_membership(l, summary)
 
 
-def gpu_run():
+def gpu_run(summary=None):
     print("USING GPU")
     fv = JointTrapMembershipV2(1, 1, 1, 1).cuda()
     fv2 = JointTrapMembershipV3(1, 1, 1, 1).cuda()
@@ -105,10 +116,17 @@ def gpu_run():
 
     for name, l in zip(names, [a1, a2, a3]):
         print(name)
-        test_membership(l)
+        test_membership(l, summary)
 
 
 if __name__ == '__main__':
-    cpu_run()
-    gpu_run()
+    d = datetime.datetime.now().isoformat()
+
+    summary = None
+    # summary = SummaryWriter(f'../tests/CPU {d}')
+    cpu_run(summary)
+
+    summary = None
+    # summary = SummaryWriter(f'../tests/GPU {d}')
+    gpu_run(summary)
     # plt.show()
