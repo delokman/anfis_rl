@@ -13,7 +13,7 @@ class Memory:
         experience = (state, action, np.array([reward]), next_state, done)
         self.buffer.append(experience)
 
-    def sample(self, batch_size):
+    def sample(self, batch_size, _):
         state_batch = []
         action_batch = []
         reward_batch = []

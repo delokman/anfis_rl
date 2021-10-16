@@ -8,13 +8,15 @@ from torch import optim
 from anfis.utils import save_fuzzy_membership_functions
 from rl.citic import Critic
 from rl.memory import Memory
+from rl.prioritized_memory_replay import PrioritizedReplayBuffer
 
 
 class DDPGAgent(torch.nn.Module):
     def __init__(self, num_inputs, num_outputs, anf, hidden_size=32, actor_learning_rate=1e-4,
-                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000):
+                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000, priority=True, grad_clip=1):
         # Params
         super().__init__()
+        self.grad_clip = grad_clip
         self.use_cuda = torch.cuda.is_available()
         self.use_cuda = False
 
@@ -48,8 +50,13 @@ class DDPGAgent(torch.nn.Module):
             target_param.data.copy_(param.data)
 
         # Training
-        self.memory = Memory(max_memory_size)
-        self.critic_criterion = torch.nn.MSELoss(reduction='sum')
+        self.priority = priority
+        if priority:
+            self.memory = PrioritizedReplayBuffer(max_memory_size, .5)
+        else:
+            self.memory = Memory(max_memory_size)
+
+        self.critic_criterion = torch.nn.MSELoss()
         self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
 
@@ -104,7 +111,7 @@ class DDPGAgent(torch.nn.Module):
 
     def get_action(self, state):
         state = torch.tensor(state, requires_grad=True, dtype=torch.float32).unsqueeze(0)
-#        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
+        #        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
         if self.use_cuda:
             state = state.cuda()
 
@@ -117,13 +124,19 @@ class DDPGAgent(torch.nn.Module):
         return action
 
     def update(self, batch_size):
-        states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
+        if self.priority:
+            states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size, 0.5)
+        else:
+            states, actions, rewards, next_states, _ = self.memory.sample(batch_size, 0)
+            weights, batch_idxes = np.ones_like(rewards), None
+
         states = torch.FloatTensor(states)
         # print(actions)
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
         actions = torch.reshape(actions, (batch_size, 1))
+        weights = torch.FloatTensor(weights)
 
         if self.use_cuda:
             states = states.cuda()
@@ -136,10 +149,10 @@ class DDPGAgent(torch.nn.Module):
         next_actions = self.actor_target.forward(next_states)
         next_Q = self.critic_target.forward(next_states, next_actions.detach())
         Qprime = rewards + self.gamma * next_Q
-        critic_loss = self.critic_criterion(Qvals, Qprime) / 5.
+        critic_loss = self.critic_criterion(Qvals * weights, Qprime * weights)
 
         # Actor loss
-        policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean() / -10.
+        policy_loss = self.critic.forward(states, self.actor.forward(states)).mean()
         # update networks
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
@@ -148,15 +161,22 @@ class DDPGAgent(torch.nn.Module):
         # g.view()
         # sys.exit()
 
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.grad_clip)
         self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
         self.critic_optimizer.step()
 
         # update target networks
         self.soft_update(self.actor_target, self.actor)
         self.soft_update(self.critic_target, self.critic)
+
+        if self.priority:
+            TD_error = torch.abs(Qprime - Qvals) + 1e-6
+
+            self.memory.update_priorities(batch_idxes, TD_error)
 
     def soft_update(self, target, source):
         for target_param, param in zip(target.parameters(), source.parameters()):
