@@ -45,8 +45,6 @@ def reward(errors, linear_vel, angular_vel):
     HE_penalty_gain = 25
     HE_penalty_shape = 3
     HE_iwrt_DE = 2
-    TDD_reward_gain = 5
-    TDD_iwrt_DE = 5
     vel_reward_gain = 1
     vel_iwrt_DE = 1
     steering_penalty_gain = 1
@@ -60,7 +58,7 @@ def reward(errors, linear_vel, angular_vel):
     dis_temp = np.abs(dis) / 1.0
     dis = (math.pow(dis_temp, DE_penalty_shape) + dis_temp) * -DE_penalty_gain
 
-    theta_near_temp = theta_near / np.pi
+    theta_near_temp = np.abs(theta_near) / np.pi
     theta_near = math.pow(theta_near_temp, HE_penalty_shape) * HE_penalty_gain / (np.exp(dis_temp * HE_iwrt_DE)) * -15
 
     theta_far_temp = np.abs(theta_far) / np.pi
