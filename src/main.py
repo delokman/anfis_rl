@@ -34,7 +34,7 @@ from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model, \
     optimized_many_error_predefined_anfis_model
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course, test_course3
+from test_course import test_course, test_course2, hard_course, test_course3, new_test_course_r_1, new_test_course_r_0_5
 
 import rospkg
 
@@ -351,6 +351,7 @@ if __name__ == '__main__':
     # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
     test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+    # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
     extend_path(test_path)
 
     name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
@@ -385,7 +386,7 @@ if __name__ == '__main__':
 
     checkpoint_saver = LowestCheckpoint()
 
-    stop_epoch = 14
+    stop_epoch = 1000
 
     scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=.5, verbose=True)
     scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=.5, verbose=True)
