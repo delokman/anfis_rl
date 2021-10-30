@@ -372,8 +372,8 @@ if __name__ == '__main__':
 
     # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
     #                   actor_learning_rate=1e-4)
-    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
-                      actor_learning_rate=1e-4)
+    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-2, hidden_size=32,
+                      actor_learning_rate=1e-3)
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
