@@ -52,7 +52,7 @@ class DDPGAgent(torch.nn.Module):
         # Training
         self.priority = priority
         if priority:
-            self.memory = PrioritizedReplayBuffer(max_memory_size, .5)
+            self.memory = PrioritizedReplayBuffer(max_memory_size, .9)
         else:
             self.memory = Memory(max_memory_size)
 
@@ -125,7 +125,7 @@ class DDPGAgent(torch.nn.Module):
 
     def update(self, batch_size):
         if self.priority:
-            states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size, 0.5)
+            states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size, 0.9)
         else:
             states, actions, rewards, next_states, _ = self.memory.sample(batch_size, 0)
             weights, batch_idxes = np.ones_like(rewards), None
