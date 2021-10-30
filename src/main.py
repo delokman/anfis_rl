@@ -172,7 +172,7 @@ def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_er
         traceback.print_exc()
 
 
-def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None, show_gradients=False):
+def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None, show_gradients=False, train=True):
     rule_weights = []
 
     print(f"EPOCH {i}")
@@ -297,7 +297,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             rewards_cummulative.append(rewards)
 
             add_to_memory(path_errors, rewards, control_law, agent, done)
-            if update_step % params['update_rate'] == 0:
+            if update_step % params['update_rate'] == 0 and train:
                 agent_update(agent, params['batch_size'], dist_e, rule_weights)
 
                 if show_gradients and len(agent.memory) > params['batch_size']:
