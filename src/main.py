@@ -88,7 +88,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
                         checkpoint, epoch, rule_weights=None):
     plot_critic_weights(summary, agent, epoch)
 
-    if rule_weights is not None:
+    if rule_weights is not None and len(rule_weights) > 0:
         fig, ax = plt.subplots()
 
         averages = torch.mean(torch.mean(torch.stack(rule_weights), dim=1), dim=0)
@@ -421,6 +421,15 @@ if __name__ == '__main__':
     jackal = Jackal()
 
     summary.add_text('Rules', markdown_rule_table(agent.actor))
+
+    memory_backup = copy.deepcopy(agent.memory)
+
+    summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
+    summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
+
+    error_threshold = 0.075
+
+    train = True
 
     for i in range(params['epoch_nums']):
         epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
