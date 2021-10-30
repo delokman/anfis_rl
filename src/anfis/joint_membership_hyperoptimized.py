@@ -22,6 +22,10 @@ class JointMembershipHyperOptimized(JointMembership):
 
         y_pred = self.compute(x)
         torch.clamp_(y_pred, 0, 1)
+        # torch.clamp_max_(y_pred, 1)
+        # mask = y_pred < 0
+        # a = 0.01
+        # y_pred[mask] = a * (torch.exp(y_pred[mask]) - 1)
 
         if self.padding > 0:
             y_pred = torch.cat([y_pred,
