@@ -432,10 +432,29 @@ if __name__ == '__main__':
     train = True
 
     for i in range(params['epoch_nums']):
-        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
-        # if i < stop_epoch:
-        scheduler1.step()
-        scheduler2.step()
-        # sys.exit()
+        mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise, train=train)
+
+        if error_flag:
+            agent.memory = copy.deepcopy(memory_backup)
+        else:
+            memory_backup = copy.deepcopy(memory_backup)
+
+            # if i < stop_epoch:
+            if mae_error < error_threshold:
+                print("DISABLED TRAINING")
+                train = False
+                agent.eval()
+            else:
+                if not train:
+                    print("RE-ENABLED TRAINING")
+                    train = True
+                    agent.train()
+
+                scheduler1.step()
+                scheduler2.step()
+            # sys.exit()
+
+        summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
+        summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
