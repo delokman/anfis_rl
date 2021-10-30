@@ -219,6 +219,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
         for name, p in agent.actor.named_parameters():
             grad_distribution[name] = []
 
+    error = False
+
     with tqdm(total=path.path_length) as pbar:
         while not rospy.is_shutdown():
             while pauser.pause:
@@ -240,6 +242,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
                 break
 
             path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
@@ -257,11 +260,13 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
                 if not params['simulation'] and dist_e > 4:
                     print("Reloading from save,", checkpoint.checkpoint_location)
                     checkpoint.reload(agent)
+                    error = True
                     break
             else:
                 print("Error!!!", path_errors)
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
                 break
 
             path_errors = np.array(path_errors)
@@ -278,6 +283,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
                 print("Error for control law resetting")
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
+                break
 
             if control_law > max_yaw_rate:
                 control_law = max_yaw_rate
@@ -318,7 +325,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, rule_weights)
 
-    return dist_error_mae
+    return dist_error_mae, error
 
 
 def extend_path(path):
