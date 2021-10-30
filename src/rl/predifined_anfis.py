@@ -77,7 +77,7 @@ def many_error_predefined_anfis_model():
 
 def optimized_many_error_predefined_anfis_model():
     parameter_values = [
-        [0, 1],
+        [0.001, 1.],
 
         [0, 2, .1, .2, .2],
         [0, 1, .6, 0.6],
