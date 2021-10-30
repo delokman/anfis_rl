@@ -387,8 +387,8 @@ if __name__ == '__main__':
 
     stop_epoch = 14
 
-    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=.95, verbose=True)
-    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=.95, verbose=True)
+    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=.5, verbose=True)
+    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=.5, verbose=True)
 
     print("Is a simulation:", is_simulation)
 
