@@ -71,9 +71,6 @@ def agent_update(agent, batch_size, dis_error, rule_weights=None):
     if len(agent.memory) > batch_size:
         agent.update(batch_size)
 
-        if rule_weights is not None:
-            rule_weights.append(agent.actor.weights)
-
 
 def add_to_memory(new_state, rewards, control_law, agent, done):
     ####do this every 0.075 s
@@ -273,6 +270,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
             #   for ddpg model
             control_law = agent.get_action(path_errors)
+
+            if rule_weights is not None:
+                rule_weights.append(agent.actor.weights)
 
             if noise is not None:
                 control_law = noise.get_action(control_law, update_step)
