@@ -27,6 +27,21 @@ class JointMembershipHyperOptimized(JointMembership):
         # a = 0.01
         # y_pred[mask] = a * (torch.exp(y_pred[mask]) - 1)
 
+
+        # a = 1.6732632423543772848170429916717
+        # l = 1.0507009873554804934193349852946
+        # y_pred[mask] = a * torch.exp(y_pred[mask]) - a
+        # y_pred *= l
+
+        # scale = .05
+        #
+        # y_pred = scale * torch.nn.SELU()(y_pred / scale)
+        #
+
+        # a = 10
+        # y_pred = 0.5 * y_pred * (1 + torch.tanh(a * np.sqrt(2 / np.pi) * (y_pred + torch.pow(y_pred, 3))))
+        # torch.clamp_max_(y_pred, 1)
+
         if self.padding > 0:
             y_pred = torch.cat([y_pred,
                                 torch.zeros(x.shape[0], self.padding, device='cuda' if self.is_cuda else 'cpu')], dim=1)
