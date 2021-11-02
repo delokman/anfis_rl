@@ -442,9 +442,10 @@ if __name__ == '__main__':
 
             # if i < stop_epoch:
             if mae_error < error_threshold:
-                print("DISABLED TRAINING")
-                train = False
-                agent.eval()
+                if train:
+                    print("DISABLED TRAINING")
+                    train = False
+                    agent.eval()
             else:
                 if not train:
                     print("RE-ENABLED TRAINING")
