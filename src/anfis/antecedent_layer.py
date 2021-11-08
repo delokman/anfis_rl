@@ -534,3 +534,26 @@ def dist_per_theta_near_theta_far():
     }
 
     return mamdani_ruleset
+
+
+if __name__ == '__main__':
+    x = torch.arange(5*7)
+    x = torch.reshape(x, (1, 5, 7))
+
+    a = MamdaniAntecedentLayer(dist_target_dist_per_theta_lookahead_theta_far_theta_near())
+
+    data = []
+
+    for i in range(len(a.mamdani_ruleset['variable_rule_index'])):
+        temp1 = []
+
+        for y in range(len(a.mamdani_ruleset['variable_rule_index'][i])):
+            temp1.append([a.mamdani_ruleset['variable_rule_index'][i][y], a.mamdani_ruleset['membership_indices'][i][y]])
+
+        data.append(temp1)
+
+    print("[", data, "]")
+
+
+    y = a(x)
+    print(y, y.shape)
