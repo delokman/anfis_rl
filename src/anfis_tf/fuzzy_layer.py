@@ -24,11 +24,12 @@ class JointFuzzifyLayer(tf.Module):
 
         c = lambda i, _: tf.less(i, len(self.input_functions))
 
+        # FIXME make this eager executable
         def foo(i, output):
-            f = x[:, i:i+1]
+            f = x[:, i:i + 1]
 
-            size = self.input_functions[i](f)
-            output = output.write(i, size)
+            val = self.input_functions[i](f)
+            output = output.write(i, val)
             return (i + 1, output)
 
         tf.while_loop(c, foo, i0)
