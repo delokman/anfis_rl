@@ -11,6 +11,9 @@ class JointFuzzifyLayer(tf.Module):
 
         self.max_outputs = tf.constant(max(i.num_outputs for i in self.input_functions))
 
+        for func in self.input_functions:
+            func.pad_to(self.max_outputs)
+
     @tf.Module.with_name_scope
     def __call__(self, x):
         i = tf.constant(0)
