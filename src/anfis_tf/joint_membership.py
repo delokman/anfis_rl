@@ -34,4 +34,4 @@ class Test(JointMembership):
         super().__init__(2)
 
     def compute(self, x):
-        return tf.concat([x, -x], axis=1)
+        return tf.concat([x, x * 2], axis=1)
