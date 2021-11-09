@@ -7,7 +7,7 @@ class JointFuzzifyLayer(tf.Module):
         super().__init__(name)
 
         with self.name_scope:
-            self.input_functions = input_functions
+            self.input_functions = [tf.function(i) for i in input_functions]
 
         self.max_outputs = tf.constant(max(i.num_outputs for i in self.input_functions))
         self.num_lingustic_variables = tf.constant(len(self.input_functions))
