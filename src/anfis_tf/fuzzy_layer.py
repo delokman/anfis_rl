@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow import Variable
 
 
 class JointFuzzifyLayer(tf.Module):
@@ -25,7 +24,7 @@ class JointFuzzifyLayer(tf.Module):
 
         c = lambda i, _: tf.less(i, self.num_lingustic_variables)
 
-        # FIXME make this eager executable
+        # FIXME make this eager executable, maybe using tf.switch_case
         def foo(i, output):
             f = x[:, i:i + 1]
 
