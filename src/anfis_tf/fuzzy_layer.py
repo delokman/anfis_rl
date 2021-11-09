@@ -10,6 +10,7 @@ class JointFuzzifyLayer(tf.Module):
             self.input_functions = input_functions
 
         self.max_outputs = tf.constant(max(i.num_outputs for i in self.input_functions))
+        self.num_lingustic_variables = tf.constant(len(self.input_functions))
 
         for func in self.input_functions:
             func.pad_to(self.max_outputs)
@@ -22,7 +23,7 @@ class JointFuzzifyLayer(tf.Module):
 
         i0 = [i, output]
 
-        c = lambda i, _: tf.less(i, len(self.input_functions))
+        c = lambda i, _: tf.less(i, self.num_lingustic_variables)
 
         # FIXME make this eager executable
         def foo(i, output):
