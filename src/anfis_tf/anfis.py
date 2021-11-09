@@ -27,7 +27,7 @@ class MamadaniANFIS(tf.Module):
         fuzzify = self.fuzzify(x)
         raw_weights = self.rules(fuzzify)
 
-        weights = tf.norm(raw_weights, ord=1, axis=1)
+        weights, _ = tf.linalg.normalize(raw_weights, ord=1, axis=0)  # b, 41
 
         rule_tsk = self.consequent()
 
