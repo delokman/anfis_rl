@@ -93,10 +93,16 @@ class AntecedentLayer(tf.Module):
         self.mamdani_ruleset = mamdani_ruleset
 
     def __call__(self, x):
-        # 1, 25, 2
-        weights = tf.gather_nd(x, self.mamdani_ruleset['membership_indices'], batch_dims=1)
+        # x: 1, 5, 7
 
-        return tf.reduce_min(weights, axis=2)
+        # 1, 25, 2
+
+        # TODO improve implement in order to remove the use of repeat
+        indices = tf.repeat(self.mamdani_ruleset['membership_indices'], x.shape[0], axis=0)
+
+        weights = tf.gather_nd(x, indices, batch_dims=1)
+
+        return tf.reduce_min(weights, axis=2)  # 1, 41
 
 
 if __name__ == '__main__':
