@@ -1,8 +1,9 @@
 import tensorflow as tf
 
-
-# @tf.function
+from anfis_tf.consequent_layer import ConsequentLayer
+from anfis_tf.antecendent_layer import AntecedentLayer
 from anfis_tf.fuzzy_layer import JointFuzzifyLayer
+from anfis_tf.joint_mamdani_membership import JointSymmetric9TriangleMembership
 from anfis_tf.joint_membership import Test
 
 
@@ -15,8 +16,11 @@ class MamadaniANFIS(tf.Module):
             self.output_functions = output_functions
 
         self.fuzzify = JointFuzzifyLayer(input_functions)
-        # self.rules = AntecedentLayer(mamdani_ruleset)
-        # self.consequent = MamdaniConsequentLayer(mamdani_ruleset, mamdani_ruleset['output'])
+        self.rules = AntecedentLayer(mamdani_ruleset)
+        self.consequent = ConsequentLayer(output_functions, self.rules.mamdani_ruleset['outputs_membership'])
+
+        self.rules = tf.function(self.rules)
+        self.consequent = tf.function(self.consequent)
 
     @tf.Module.with_name_scope
     def __call__(self, x):
