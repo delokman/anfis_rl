@@ -36,13 +36,18 @@ class MamadaniANFIS(tf.Module):
 
 
 if __name__ == '__main__':
-    model = MamadaniANFIS([Test()], None)
+    dim = 5
+
+    membs = []
+
+    for i in range(dim):
+        membs.append(Test())
+
+    model = MamadaniANFIS(membs, JointSymmetric9TriangleMembership(0., 1., 1., 1., 1.))
     # model = tf.function(model)
 
-    x1 = tf.linspace(-10, 10, 20)
-    x2 = tf.linspace(10, -10, 20)
+    x = tf.random.uniform((2, dim), 0, 1, seed=42)
 
-    x = tf.concat([x1, x2], axis=0)
-    x = tf.reshape(x, (20, 2))
-
-    model(x)
+    for i in range(10000):
+        model(x)
+    print("Done")
