@@ -36,7 +36,7 @@ class JointMembership(tf.Module, ABC):
 
 class Test(JointMembership):
     def __init__(self):
-        super().__init__(2)
+        super().__init__(7)
 
     def compute(self, x):
-        return tf.concat([x, x * 2], axis=1)
+        return tf.concat([x] * 7, axis=1)
