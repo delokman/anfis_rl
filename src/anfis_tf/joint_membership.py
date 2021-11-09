@@ -8,15 +8,20 @@ class JointMembership(tf.Module, ABC):
         super(JointMembership, self).__init__()
 
         self.num_outputs = tf.constant(num_outputs)
-        self.padding = 0
+        self._padding = 0
 
-        self.padding_array = None
+        self.padding_array = tf.zeros(0)
 
-    def pad_to(self, max_outputs):
-        self.padding = max_outputs - self.num_outputs
+    @property
+    def padding(self):
+        return self._padding
+
+    @padding.setter
+    def padding(self, max_outputs):
+        self._padding = max_outputs - self.num_outputs
 
         if self.padding > 0:
-            self.padding_array = tf.constant(tf.zeros(self.padding))
+            self.padding_array = tf.zeros(self.padding)
 
     @abstractmethod
     def compute(self, x):
