@@ -13,7 +13,7 @@ class JointFuzzifyLayer(tf.Module):
         self.num_lingustic_variables = tf.constant(len(self.input_functions))
 
         for func in self.input_functions:
-            func.pad_to(self.max_outputs)
+            func.padding = self.max_outputs
 
     @tf.Module.with_name_scope
     def __call__(self, x):
