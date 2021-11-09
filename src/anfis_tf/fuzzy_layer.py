@@ -18,7 +18,7 @@ class JointFuzzifyLayer(tf.Module):
     def __call__(self, x):
         i = tf.constant(0)
 
-        output = tf.TensorArray(x.dtype, x.get_shape()[1])
+        output = tf.TensorArray(x.dtype, x.shape[1])
 
         i0 = [i, output]
 
