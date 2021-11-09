@@ -106,8 +106,9 @@ class AntecedentLayer(tf.Module):
 
 
 if __name__ == '__main__':
-    x = tf.range(5 * 7)
-    x = tf.reshape(x, (1, 5, 7))
+    a = 4
+    x = tf.range(5 * 7 * a)
+    x = tf.reshape(x, (a, 5, 7))
     a = AntecedentLayer()
 
     print(x)
