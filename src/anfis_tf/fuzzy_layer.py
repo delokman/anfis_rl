@@ -36,6 +36,4 @@ class JointFuzzifyLayer(tf.Module):
 
         y_pred = tf.transpose(output.stack(), (1, 0, 2))
 
-        print(y_pred)
-
         return y_pred
