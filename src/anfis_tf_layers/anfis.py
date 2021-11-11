@@ -4,7 +4,8 @@ from typing import List
 import tensorflow as tf
 from tensorflow import keras
 
-from anfis_tf_layers.joint_membership import JointMembership, Test
+from anfis_tf_layers.joint_membership import JointMembership, Test, JointTrap5Membership, JointTrap7Membership, \
+    JointSingleConstrainedEdgeMembership
 from anfis_tf_layers.mamdani_output import JointSymmetric9TriangleMembership
 from anfis_tf_layers.rules import rules
 
@@ -98,7 +99,14 @@ if __name__ == '__main__':
     x = tf.random.uniform((n, 5), 0., 1., seed=42)
     y = tf.random.uniform((n,), 0., 1., seed=42)
 
-    model = ANFIS([Test(), Test(), Test(), Test(), Test()], JointSymmetric9TriangleMembership(0., 1., 1., 1., 1.),
+    joint_definitons = [JointSingleConstrainedEdgeMembership(0.001, 1., constant_center=False),
+                        JointTrap7Membership(0., 2., .1, .2, .2, constant_center=True),
+                        JointTrap5Membership(0., 1., .6, .6, constant_center=True),
+                        JointTrap5Membership(0., 1., .3, .1, constant_center=True),
+                        JointTrap5Membership(0., 1.5, 0.1, 0.1, constant_center=True),
+                        ]
+
+    model = ANFIS(joint_definitons, JointSymmetric9TriangleMembership(0., 1., 1., 1., 1.),
                   rules())
     model.compile('sgd', 'mse')
 
