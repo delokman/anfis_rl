@@ -92,13 +92,19 @@ class AntecedentLayer(tf.Module):
 
         self.mamdani_ruleset = mamdani_ruleset
 
+        self.index_cache = dict()
+
     def __call__(self, x):
         # x: 1, 5, 7
 
         # 1, 25, 2
 
-        # TODO improve implement in order to remove the use of repeat
-        indices = tf.repeat(self.mamdani_ruleset['membership_indices'], x.shape[0], axis=0)
+        if x.shape[0] not in self.index_cache:
+            # TODO improve implement in order to remove the use of repeat
+            indices = tf.repeat(self.mamdani_ruleset['membership_indices'], x.shape[0], axis=0)
+            self.index_cache[x.shape[0]] = indices
+        else:
+            indices = self.index_cache[x.shape[0]]
 
         weights = tf.gather_nd(x, indices, batch_dims=1)
 
