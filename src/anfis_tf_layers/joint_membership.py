@@ -22,14 +22,12 @@ class JointMembership(keras.layers.Layer, ABC):
             self.padding = v
 
     def build(self, input_shape):
-        print(len(JointMembership.padding_cache))
         if self.padding > 0:
             if self.padding.ref() not in JointMembership.padding_cache:
                 self.padding_c = tf.zeros((input_shape[0], self.padding))
                 JointMembership.padding_cache[self.padding.ref()] = self.padding_c
             else:
                 self.padding_c = JointMembership.padding_cache[self.padding.ref()]
-
 
     @abstractmethod
     def compute(self, x):
