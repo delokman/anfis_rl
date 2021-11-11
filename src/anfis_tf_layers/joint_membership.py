@@ -5,6 +5,8 @@ from tensorflow import keras
 
 
 class JointMembership(keras.layers.Layer, ABC):
+    padding_cache = dict()
+
     def __init__(self, num_outputs):
         super(JointMembership, self).__init__()
         self.num_outputs = tf.constant(num_outputs)
@@ -18,7 +20,16 @@ class JointMembership(keras.layers.Layer, ABC):
 
         if v > 0:
             self.padding = v
-            self.padding_c = tf.zeros(v)
+
+    def build(self, input_shape):
+        print(len(JointMembership.padding_cache))
+        if self.padding > 0:
+            if self.padding.ref() not in JointMembership.padding_cache:
+                self.padding_c = tf.zeros((input_shape[0], self.padding))
+                JointMembership.padding_cache[self.padding.ref()] = self.padding_c
+            else:
+                self.padding_c = JointMembership.padding_cache[self.padding.ref()]
+
 
     @abstractmethod
     def compute(self, x):
@@ -29,8 +40,7 @@ class JointMembership(keras.layers.Layer, ABC):
         x = tf.clip_by_value(x, 0, 1)
 
         if self.padding > 0:
-            a = tf.repeat(self.padding_c, x.shape[0])
-            x = tf.concat([x, a], axis=0)
+            x = tf.concat([x, self.padding_c], axis=1)
         return x
 
 
