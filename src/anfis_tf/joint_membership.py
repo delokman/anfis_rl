@@ -39,4 +39,4 @@ class Test(JointMembership):
         super().__init__(7)
 
     def compute(self, x):
-        return tf.concat([x] * 7, axis=1)
+        return tf.repeat(x, 7, axis=1)
