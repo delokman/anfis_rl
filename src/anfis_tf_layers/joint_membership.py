@@ -37,7 +37,7 @@ class JointMembership(keras.layers.Layer, ABC):
 
     def call(self, x):
         x = self.compute(x)
-        x = tf.clip_by_value(x, 0, 1)
+        x = tf.clip_by_value(x, tf.keras.backend.epsilon(), 1.)
 
         if self.padding > 0:
             x = tf.concat([x, self.padding_c], axis=1)
