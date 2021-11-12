@@ -2,15 +2,16 @@ from datetime import datetime
 from typing import List
 
 import tensorflow as tf
-from tensorflow import keras
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Layer
 
-from anfis_tf_layers.joint_membership import JointMembership, Test, JointTrap5Membership, JointTrap7Membership, \
+from anfis_tf_layers.joint_membership import JointMembership, JointTrap5Membership, JointTrap7Membership, \
     JointSingleConstrainedEdgeMembership
 from anfis_tf_layers.mamdani_output import JointSymmetric9TriangleMembership
 from anfis_tf_layers.rules import rules
 
 
-class JointFuzzifyLayer(keras.layers.Layer):
+class JointFuzzifyLayer(Layer):
     def __init__(self, input_layers: List[JointMembership]):
         super(JointFuzzifyLayer, self).__init__()
 
@@ -30,7 +31,7 @@ class JointFuzzifyLayer(keras.layers.Layer):
         return o
 
 
-class AntecedentLayer(keras.layers.Layer):
+class AntecedentLayer(Layer):
     def __init__(self, indexes):
         super(AntecedentLayer, self).__init__()
 
@@ -46,7 +47,7 @@ class AntecedentLayer(keras.layers.Layer):
         return tf.reduce_min(weights, axis=2)
 
 
-class ConsequentLayer(keras.layers.Layer):
+class ConsequentLayer(Layer):
     def __init__(self, output_membership_mapping) -> None:
         super().__init__()
         self.output_membership_mapping = tf.constant(output_membership_mapping)
@@ -55,18 +56,19 @@ class ConsequentLayer(keras.layers.Layer):
         return tf.expand_dims(tf.gather_nd(mamdani_output, self.output_membership_mapping), 1)
 
 
-class Normalize(keras.layers.Layer):
-    def call(self, x):
+class Normalize(Layer):
+    def call(self, x, **kwargs):
         x, _ = tf.linalg.normalize(x, ord=1, axis=0)
         return x
 
 
-class Multiply(keras.layers.Layer):
+class Multiply(Layer):
     def call(self, x, rules):
         return tf.matmul(x, rules)
 
 
-class ANFIS(keras.Model):
+
+class ANFIS(Model):
     def __init__(self, input_layers, output_functions, mamdani_ruleset):
         super(ANFIS, self).__init__()
 

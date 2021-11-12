@@ -1,9 +1,8 @@
-from functools import partial
-
 import tensorflow as tf
+from tensorflow.keras.layers import Layer
 
 
-class JointSymmetric9TriangleMembership(tf.keras.layers.Layer):
+class JointSymmetric9TriangleMembership(Layer):
 
     def __getitem__(self, item):
         return tf.switch_case(item, self.output_function)
@@ -45,7 +44,7 @@ class JointSymmetric9TriangleMembership(tf.keras.layers.Layer):
         #     8: partial(self.get_very_hard, direction=-1),
         # }
 
-    def call(self, _):
+    def call(self, **kwargs):
         llll = self.get_very_hard(1)
         lll = self.get_hard(1)
         ll = self.get_normal(1)

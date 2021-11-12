@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 
 import tensorflow as tf
-from tensorflow import keras
+from tensorflow.keras.layers import Layer
 
 
-class JointMembership(keras.layers.Layer, ABC):
+class JointMembership(Layer, ABC):
     padding_cache = dict()
 
     def __init__(self, num_outputs):
@@ -38,6 +38,7 @@ class JointMembership(keras.layers.Layer, ABC):
         x = tf.clip_by_value(x, tf.keras.backend.epsilon(), 1.)
 
         if self.padding > 0:
+            # x = tf.pad(x, [[0, 0], [0, self.padding]])
             x = tf.concat([x, self.padding_c], axis=1)
         return x
 
