@@ -11,7 +11,7 @@ class JointMembership(Layer, ABC):
         super(JointMembership, self).__init__()
         self.num_outputs = tf.constant(num_outputs)
 
-        self.padding = 0
+        self.padding = tf.constant(0)
 
         self.padding_c = tf.zeros(0)
 
@@ -19,15 +19,15 @@ class JointMembership(Layer, ABC):
         v = padding - self.num_outputs
 
         if v > 0:
-            self.padding = v
+            self.padding = tf.constant(v)
 
     def build(self, input_shape):
         if self.padding > 0:
-            if self.padding not in JointMembership.padding_cache:
+            if self.padding.ref() not in JointMembership.padding_cache:
                 self.padding_c = tf.zeros((input_shape[0], self.padding))
-                JointMembership.padding_cache[self.padding] = self.padding_c
+                JointMembership.padding_cache[self.padding.ref()] = self.padding_c
             else:
-                self.padding_c = JointMembership.padding_cache[self.padding]
+                self.padding_c = JointMembership.padding_cache[self.padding.ref()]
 
     @abstractmethod
     def compute(self, x):
