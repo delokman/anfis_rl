@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import tensorflow as tf
+from keras.layers import Concatenate
 from tensorflow.keras.layers import Layer
 
 
@@ -14,6 +15,7 @@ class JointMembership(Layer, ABC):
         self.padding = tf.constant(0)
 
         self.padding_c = tf.zeros(0)
+        self.concat = Concatenate(axis=1)
 
     def pad_to(self, padding):
         v = padding - self.num_outputs
@@ -37,9 +39,13 @@ class JointMembership(Layer, ABC):
         x = self.compute(x)
         x = tf.clip_by_value(x, tf.keras.backend.epsilon(), 1.)
 
-        if self.padding > 0:
+        # if tf.greater(self.padding, 0):
+        if self.padding_c.shape[0] > 0:
+            # print(self.name,self.padding > 0)
+            # print(self.padding_c.shape)
             # x = tf.pad(x, [[0, 0], [0, self.padding]])
-            x = tf.concat([x, self.padding_c], axis=1)
+            # x = tf.concat([x, self.padding_c], axis=1)
+            x = self.concat([x, self.padding_c])
         return x
 
 
