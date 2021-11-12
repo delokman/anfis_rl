@@ -33,7 +33,7 @@ class JointMembership(Layer, ABC):
     def compute(self, x):
         pass
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         x = self.compute(x)
         x = tf.clip_by_value(x, tf.keras.backend.epsilon(), 1.)
 

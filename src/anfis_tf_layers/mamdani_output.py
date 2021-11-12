@@ -44,7 +44,7 @@ class JointSymmetric9TriangleMembership(Layer):
         #     8: partial(self.get_very_hard, direction=-1),
         # }
 
-    def call(self, **kwargs):
+    def call(self, x, **kwargs):
         llll = self.get_very_hard(1)
         lll = self.get_hard(1)
         ll = self.get_normal(1)

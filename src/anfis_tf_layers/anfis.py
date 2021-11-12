@@ -21,7 +21,7 @@ class JointFuzzifyLayer(Layer):
         for i in input_layers:
             i.pad_to(self.max_outputs)
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         ouptuts = []
 
         for i, inp in enumerate(self.input_layers):
@@ -41,7 +41,7 @@ class AntecedentLayer(Layer):
     def build(self, input_shape):
         self.indices = tf.repeat(self._indexes, input_shape[0], axis=0)
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         weights = tf.gather_nd(x, self.indices, batch_dims=1)
 
         return tf.reduce_min(weights, axis=2)
@@ -52,7 +52,7 @@ class ConsequentLayer(Layer):
         super().__init__()
         self.output_membership_mapping = tf.constant(output_membership_mapping)
 
-    def call(self, mamdani_output):
+    def call(self, mamdani_output, **kwargs):
         return tf.expand_dims(tf.gather_nd(mamdani_output, self.output_membership_mapping), 1)
 
 
@@ -63,9 +63,9 @@ class Normalize(Layer):
 
 
 class Multiply(Layer):
-    def call(self, x, rules):
+    def call(self, inputs, **kwargs):
+        x, rules = inputs
         return tf.matmul(x, rules)
-
 
 
 class ANFIS(Model):
@@ -79,17 +79,18 @@ class ANFIS(Model):
         self.consequent = ConsequentLayer(mamdani_ruleset['outputs_membership'])
         self.multiply = Multiply()
 
-    def call(self, x):
+    def call(self, x, **kwargs):
+        print(x.shape)
         x = self.fuzzify(x)
         x = self.rules(x)
 
         x = self.normalize(x)
 
-        output = self.output_function(None)
+        output = self.output_function([])
 
         rule_tsk = self.consequent(output)
 
-        return self.multiply(x, rule_tsk)
+        return self.multiply((x, rule_tsk))
 
 
 if __name__ == '__main__':
