@@ -5,6 +5,8 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 
+tf.config.optimizer.set_jit(True)
+
 from anfis_tf_layers.joint_membership import JointMembership, JointTrap5Membership, JointTrap7Membership, \
     JointSingleConstrainedEdgeMembership
 from anfis_tf_layers.mamdani_output import JointSymmetric9TriangleMembership
