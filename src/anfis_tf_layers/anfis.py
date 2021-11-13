@@ -3,6 +3,7 @@ from typing import List
 
 import tensorflow as tf
 from tensorflow.keras import Model
+from tensorflow.keras.callbacks import TensorBoard, LambdaCallback
 from tensorflow.keras.layers import Layer
 
 tf.config.optimizer.set_jit(True)
@@ -82,7 +83,6 @@ class ANFIS(Model):
         self.multiply = Multiply()
 
     def call(self, x, **kwargs):
-        print(x.shape)
         x = self.fuzzify(x)
         x = self.rules(x)
 
@@ -96,10 +96,11 @@ class ANFIS(Model):
 
 
 if __name__ == '__main__':
-    from keras import backend as K
-    print(K.tensorflow_backend._get_available_gpus()  )
+    logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    file_writer = tf.summary.create_file_writer(logdir + "/variables")
+    file_writer.set_as_default()
 
-    n = 10000
+    n = 64 * 1000
 
     x = tf.random.uniform((n, 5), 0., 1., seed=42)
     y = tf.random.uniform((n,), 0., 1., seed=42)
@@ -113,12 +114,29 @@ if __name__ == '__main__':
 
     model = ANFIS(joint_definitons, JointSymmetric9TriangleMembership(0., 1., 1., 1., 1.),
                   rules())
+    #  tensorboard --logdir=src/anfis_tf_layers/logs --samples_per_plugin images=999
     model.compile('sgd', 'mse')
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs", write_graph=True, profile_batch=1)
-    data = tf.data.Dataset.from_tensors((x, y))
-    data.batch(64)
 
-    model.fit(data,  callbacks=[tensorboard_callback], epochs=10)
+    # model.build(input_shape=(64, 5))
+    # model(tf.keras.layers.Input(5, 64))
+    # model(tf.keras.layers.Input(shape=5, batch_size=64))
+    # y_ = model(x[:64])
+    # print(y_)
+    # print(model.summary())
+
+    def plot_variables(epoch, logs):
+        for v in model.trainable_variables:
+            tf.summary.scalar(v.name, v, step=epoch)
+
+
+    tensorboard_callback = TensorBoard(log_dir=logdir, write_graph=True, profile_batch='100,500')
+    v = LambdaCallback(on_epoch_end=plot_variables)
+
+    # x = tf.cast(x, tf.float16)
+    # y = tf.cast(y, tf.float16)
+    data = tf.data.Dataset.from_tensor_slices((x, y)).cache().batch(64, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
+
+    model.fit(data, callbacks=[tensorboard_callback, v], epochs=10)
 
     print(model.summary())
