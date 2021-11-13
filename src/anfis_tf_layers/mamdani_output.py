@@ -22,15 +22,16 @@ class JointSymmetric9TriangleMembership(Layer):
     def get_very_hard(self, direction=1):
         return self.get_hard(direction=direction) + direction * tf.abs(self.very_hard)
 
-    def __init__(self, center, soft, normal, hard, very_hard, constant_center=True) -> None:
-        super().__init__()
+    def __init__(self, center, soft, normal, hard, very_hard, constant_center=True, name=None) -> None:
+        super().__init__(name=name)
 
-        self.center = tf.Variable(center, trainable=constant_center)
+        with tf.name_scope(self.name):
+            self.center = tf.Variable(center, trainable=constant_center, name="center")
 
-        self.soft = tf.Variable(soft)
-        self.normal = tf.Variable(normal)
-        self.hard = tf.Variable(hard)
-        self.very_hard = tf.Variable(very_hard)
+            self.soft = tf.Variable(soft, name='soft')
+            self.normal = tf.Variable(normal, name='normal')
+            self.hard = tf.Variable(hard, name='hard')
+            self.very_hard = tf.Variable(very_hard, name='very_hard')
 
         # self.output_function = {
         #     0: partial(self.get_very_hard, direction=1),

@@ -8,8 +8,8 @@ from tensorflow.keras.layers import Layer
 class JointMembership(Layer, ABC):
     padding_cache = dict()
 
-    def __init__(self, num_outputs):
-        super(JointMembership, self).__init__()
+    def __init__(self, num_outputs, name=None):
+        super(JointMembership, self).__init__(name=name)
         self.num_outputs = tf.constant(num_outputs)
 
         self.padding = tf.constant(0)
@@ -65,14 +65,16 @@ class JointTrap5Membership(JointMembership):
         return tf.abs(self.center_width) / 2 + tf.abs(self.side_width) + 2 / tf.abs(
             self.slope - self.slope_constraint) + self.slope_constraint
 
-    def __init__(self, center, slope, center_width, side_width, constant_center=False, min_slope=0.01):
-        super().__init__(5)
+    def __init__(self, center, slope, center_width, side_width, constant_center=False, min_slope=0.01, name=None):
+        super().__init__(5, name=name)
         self.slope_constraint = tf.constant(min_slope)
 
-        self.center = tf.Variable(center, trainable=constant_center)
-        self.slope = tf.Variable(slope)
-        self.center_width = tf.Variable(center_width)
-        self.side_width = tf.Variable(side_width)
+        with tf.name_scope(self.name):
+
+            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.slope = tf.Variable(slope, name='slope')
+            self.center_width = tf.Variable(center_width, name='center_width')
+            self.side_width = tf.Variable(side_width, name='side_width')
 
     def compute(self, x):
         slope = tf.abs(self.slope - self.slope_constraint) + self.slope_constraint
@@ -131,12 +133,14 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
     def right_x(self):
         return self.left_x() + self.half_width() * 2
 
-    def __init__(self, center, slope, constant_center=False, min_slope=0.01):
-        super().__init__(2)
+    def __init__(self, center, slope, constant_center=False, min_slope=0.01, name=None):
+        super().__init__(2, name=name)
         self.slope_constraint = tf.constant(min_slope)
 
-        self.center = tf.Variable(center, trainable=constant_center)
-        self.slope = tf.Variable(slope)
+        with tf.name_scope(self.name):
+
+            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.slope = tf.Variable(slope, name='slope')
 
     def compute(self, x):
         slope = tf.abs(self.slope - self.slope_constraint) + self.slope_constraint
@@ -162,14 +166,16 @@ class JointTrap7Membership(JointMembership):
         return self.center + self.half_width()
 
     def __init__(self, center, slope, center_width, side_width, super_side_width, constant_center=False,
-                 min_slope=0.01):
-        super().__init__(7)
+                 min_slope=0.01, name=None):
+        super().__init__(7, name=name)
         self.slope_constraint = tf.constant(min_slope)
-        self.center = tf.Variable(center, trainable=constant_center)
-        self.slope = tf.Variable(slope)
-        self.center_width = tf.Variable(center_width)
-        self.side_width = tf.Variable(side_width)
-        self.super_side_width = tf.Variable(super_side_width)
+
+        with tf.name_scope(self.name):
+            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.slope = tf.Variable(slope, name='slope')
+            self.center_width = tf.Variable(center_width, name='center_width')
+            self.side_width = tf.Variable(side_width, name='side_width')
+            self.super_side_width = tf.Variable(super_side_width, name='super_side_width')
 
     def compute(self, x):
         # IMPLEMENT TECHNIQUE SO THAT THE OUTPUT MATRIX IS FIST ALL ZEROS.
