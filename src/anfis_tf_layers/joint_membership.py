@@ -71,7 +71,7 @@ class JointTrap5Membership(JointMembership):
 
         with tf.name_scope(self.name):
 
-            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.center = tf.Variable(center, trainable=not constant_center, name='center')
             self.slope = tf.Variable(slope, name='slope')
             self.center_width = tf.Variable(center_width, name='center_width')
             self.side_width = tf.Variable(side_width, name='side_width')
@@ -139,7 +139,7 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
 
         with tf.name_scope(self.name):
 
-            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.center = tf.Variable(center, trainable=not constant_center, name='center')
             self.slope = tf.Variable(slope, name='slope')
 
     def compute(self, x):
@@ -171,7 +171,7 @@ class JointTrap7Membership(JointMembership):
         self.slope_constraint = tf.constant(min_slope)
 
         with tf.name_scope(self.name):
-            self.center = tf.Variable(center, trainable=constant_center, name='center')
+            self.center = tf.Variable(center, trainable=not constant_center, name='center')
             self.slope = tf.Variable(slope, name='slope')
             self.center_width = tf.Variable(center_width, name='center_width')
             self.side_width = tf.Variable(side_width, name='side_width')

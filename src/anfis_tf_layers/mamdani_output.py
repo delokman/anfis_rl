@@ -26,7 +26,7 @@ class JointSymmetric9TriangleMembership(Layer):
         super().__init__(name=name)
 
         with tf.name_scope(self.name):
-            self.center = tf.Variable(center, trainable=constant_center, name="center")
+            self.center = tf.Variable(center, trainable=not constant_center, name="center")
 
             self.soft = tf.Variable(soft, name='soft')
             self.normal = tf.Variable(normal, name='normal')
