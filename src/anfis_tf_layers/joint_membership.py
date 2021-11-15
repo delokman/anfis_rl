@@ -22,6 +22,7 @@ class JointMembership(Layer, ABC):
 
     def __init__(self, num_outputs, membership_names, name=None):
         super(JointMembership, self).__init__(name=name)
+        self.membership_names = membership_names
         self.num_outputs = tf.constant(num_outputs)
 
         self.padding = tf.constant(0)
@@ -60,29 +61,37 @@ class JointMembership(Layer, ABC):
             x = self.concat([x, self.padding_c])
         return x
 
+    def plot(self, figure: Figure, n=500):
+        offset = self.half_width() * .05
 
-class Test(JointMembership):
-    def __init__(self):
-        super().__init__(7)
+        x = tf.linspace(self.left_x() - offset, self.right_x() + offset, n)
+        y = self.call(tf.expand_dims(x, 1))
 
-    def compute(self, x):
-        return tf.repeat(x, 7, axis=1)
+        ax: Axes = figure.gca()
+
+        for i, name in enumerate(self.membership_names):
+            ax.plot(x, y[:, i], label=name)
+
+        ax.set_title(f'{self.name}')
+        ax.legend()
 
 
 class JointTrap5Membership(JointMembership):
     def left_x(self):
         return self.center - self.half_width()
 
+    def right_x(self):
+        return self.center + self.half_width()
+
     def half_width(self):
         return tf.abs(self.center_width) / 2 + tf.abs(self.side_width) + 2 / tf.abs(
             self.slope - self.slope_constraint) + self.slope_constraint
 
     def __init__(self, center, slope, center_width, side_width, constant_center=False, min_slope=0.01, name=None):
-        super().__init__(5, name=name)
+        super().__init__(5, ["Left Edge", "Left", "Center", "Right", "Right Edge"], name=name)
         self.slope_constraint = tf.constant(min_slope)
 
         with tf.name_scope(self.name):
-
             self.center = tf.Variable(center, trainable=not constant_center, name='center')
             self.slope = tf.Variable(slope, name='slope')
             self.center_width = tf.Variable(center_width, name='center_width')
@@ -146,11 +155,10 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
         return self.left_x() + self.half_width() * 2
 
     def __init__(self, center, slope, constant_center=False, min_slope=0.01, name=None):
-        super().__init__(2, name=name)
+        super().__init__(2, ['Close', "Far"], name=name)
         self.slope_constraint = tf.constant(min_slope)
 
         with tf.name_scope(self.name):
-
             self.center = tf.Variable(center, trainable=not constant_center, name='center')
             self.slope = tf.Variable(slope, name='slope')
 
@@ -179,7 +187,8 @@ class JointTrap7Membership(JointMembership):
 
     def __init__(self, center, slope, center_width, side_width, super_side_width, constant_center=False,
                  min_slope=0.01, name=None):
-        super().__init__(7, name=name)
+        super().__init__(7, ['Left Edge', 'Left', 'Close Left', "Center", 'Close Right', "Right", 'Right Edge'],
+                         name=name)
         self.slope_constraint = tf.constant(min_slope)
 
         with tf.name_scope(self.name):
