@@ -1,7 +1,10 @@
+import io
 from datetime import datetime
 from typing import List
 
 import tensorflow as tf
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from tensorflow.keras import Model
 from tensorflow.keras.callbacks import TensorBoard, LambdaCallback
 from tensorflow.keras.layers import Layer
@@ -95,6 +98,15 @@ class ANFIS(Model):
         return self.multiply((x, rule_tsk))
 
 
+def fig_to_image(fig: Figure):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    image = tf.image.decode_png(buf.getvalue(), channels=4)
+    image = tf.expand_dims(image, 0)
+    return image
+
+
 if __name__ == '__main__':
     logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
     file_writer = tf.summary.create_file_writer(logdir + "/variables")
@@ -128,6 +140,17 @@ if __name__ == '__main__':
     def plot_variables(epoch, logs):
         for v in model.trainable_variables:
             tf.summary.scalar(v.name, v, step=epoch)
+
+
+    def plot_memberships(epoch, logs):
+        for mem in model.fuzzify.input_layers:
+            # fig = plt.figure(figsize=(640 * scale / dpi, 480 * scale / dpi), dpi=dpi)
+            fig = plt.figure()
+            mem: JointMembership
+
+            mem.plot(fig)
+            tf.summary.image(f"Memberships/{mem.name}", fig_to_image(fig), epoch)
+            plt.close(fig)
 
 
     tensorboard_callback = TensorBoard(log_dir=logdir, write_graph=True, profile_batch='100,500')

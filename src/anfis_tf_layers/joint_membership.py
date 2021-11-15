@@ -56,9 +56,9 @@ class JointMembership(Layer, ABC):
         if self.padding_c.shape[0] > 0:
             # print(self.name,self.padding > 0)
             # print(self.padding_c.shape)
-            # x = tf.pad(x, [[0, 0], [0, self.padding]])
+            x = tf.pad(x, [[0, 0], [0, self.padding]])
             # x = tf.concat([x, self.padding_c], axis=1)
-            x = self.concat([x, self.padding_c])
+            # x = self.concat([x, self.padding_c])
         return x
 
     def plot(self, figure: Figure, n=500):
