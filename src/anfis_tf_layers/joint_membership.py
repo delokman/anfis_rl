@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 import tensorflow as tf
 from keras.layers import Concatenate
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from tensorflow.keras.layers import Layer
 
 
