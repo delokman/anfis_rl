@@ -23,8 +23,9 @@ do another source: `source ~/python3_ws/devel/setup.bash`
 
 roslaunch jackal_gazebo empty_world.launch joystick:=false gui:=false
 
-catkin clean; catkin_make clean; catkin build --cmake-args -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
-catkin clean; catkin_make clean; catkin_make -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
+catkin clean; catkin_make clean; catkin build --cmake-args -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python -DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+catkin clean; catkin_make clean; catkin_make -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python -DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+
 
 ##Tensorboard run
 ## Local machine
