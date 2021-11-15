@@ -23,7 +23,8 @@ do another source: `source ~/python3_ws/devel/setup.bash`
 
 roslaunch jackal_gazebo empty_world.launch joystick:=false gui:=false
 
-catkin clean; catkin build --cmake-args -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
+catkin clean; catkin_make clean; catkin build --cmake-args -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
+catkin clean; catkin_make clean; catkin_make -DPYTHON_EXECUTABLE:FILEPATH=/home/auvsl/python3_ws/py3env/bin/python
 
 ##Tensorboard run
 ## Local machine
