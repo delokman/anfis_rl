@@ -8,7 +8,19 @@ from tensorflow.keras.layers import Layer
 class JointMembership(Layer, ABC):
     padding_cache = dict()
 
-    def __init__(self, num_outputs, name=None):
+    @abstractmethod
+    def left_x(self):
+        pass
+
+    @abstractmethod
+    def half_width(self):
+        pass
+
+    @abstractmethod
+    def right_x(self):
+        pass
+
+    def __init__(self, num_outputs, membership_names, name=None):
         super(JointMembership, self).__init__(name=name)
         self.num_outputs = tf.constant(num_outputs)
 
