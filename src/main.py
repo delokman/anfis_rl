@@ -373,8 +373,8 @@ if __name__ == '__main__':
 
     # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
     #                   actor_learning_rate=1e-4)
-    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-2, hidden_size=32,
-                      actor_learning_rate=1e-3)
+    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+                      actor_learning_rate=1e-4, priority=False)
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
@@ -388,8 +388,8 @@ if __name__ == '__main__':
 
     stop_epoch = 1000
 
-    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=.5, verbose=True)
-    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=.5, verbose=True)
+    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=1, verbose=True)
+    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=1, verbose=True)
 
     print("Is a simulation:", is_simulation)
 
@@ -404,7 +404,7 @@ if __name__ == '__main__':
     params = {
         'linear_vel': 1.5,
         'batch_size': 32,
-        'update_rate': 1,
+        'update_rate': 5,
         'epoch_nums': 100,
         'control_mul': 1. if is_simulation else 1.,
         'simulation': is_simulation,
