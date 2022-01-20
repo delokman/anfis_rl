@@ -433,6 +433,7 @@ if __name__ == '__main__':
     train = True
 
     for i in range(params['epoch_nums']):
+        summary.add_scalar('model/learning', train, i)
         mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise, train=train)
 
         if error_flag:
