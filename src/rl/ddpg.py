@@ -13,7 +13,8 @@ from rl.prioritized_memory_replay import PrioritizedReplayBuffer
 
 class DDPGAgent(torch.nn.Module):
     def __init__(self, num_inputs, num_outputs, anf, hidden_size=32, actor_learning_rate=1e-4,
-                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000, priority=True, grad_clip=1):
+                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000, priority=True, grad_clip=1,
+                 alpha=0.9, beta=0.9):
         # Params
         super().__init__()
         self.grad_clip = grad_clip
@@ -37,7 +38,9 @@ class DDPGAgent(torch.nn.Module):
             'critic_lr': critic_learning_rate,
             'gamma': gamma,
             'tau': tau,
-            'max_memory': max_memory_size
+            'max_memory': max_memory_size,
+            'priority': priority,
+            'grad_clip': grad_clip,
         }
 
         self.critic = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
@@ -52,7 +55,9 @@ class DDPGAgent(torch.nn.Module):
         # Training
         self.priority = priority
         if priority:
-            self.memory = PrioritizedReplayBuffer(max_memory_size, .9)
+            self.memory = PrioritizedReplayBuffer(max_memory_size, alpha, beta)
+            self.input_params['mem_alpha'] = alpha
+            self.input_params['mem_beta'] = beta
         else:
             self.memory = Memory(max_memory_size)
 
@@ -125,9 +130,9 @@ class DDPGAgent(torch.nn.Module):
 
     def update(self, batch_size):
         if self.priority:
-            states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size, 0.9)
+            states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size)
         else:
-            states, actions, rewards, next_states, _ = self.memory.sample(batch_size, 0)
+            states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
             weights, batch_idxes = np.ones_like(rewards), None
 
         states = torch.FloatTensor(states)
