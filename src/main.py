@@ -439,7 +439,7 @@ if __name__ == '__main__':
         if error_flag:
             agent.memory = copy.deepcopy(memory_backup)
         else:
-            memory_backup = copy.deepcopy(memory_backup)
+            memory_backup = copy.deepcopy(agent.memory)
 
             # if i < stop_epoch:
             if mae_error < error_threshold:
