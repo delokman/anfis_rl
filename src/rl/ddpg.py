@@ -61,7 +61,7 @@ class DDPGAgent(torch.nn.Module):
         else:
             self.memory = Memory(max_memory_size)
 
-        self.critic_criterion = torch.nn.MSELoss()
+        self.critic_criterion = torch.nn.MSELoss(reduction='sum')
         self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
         self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
 
