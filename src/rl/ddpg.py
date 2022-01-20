@@ -166,12 +166,12 @@ class DDPGAgent(torch.nn.Module):
         # g.view()
         # sys.exit()
 
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.grad_clip)
+        # torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.grad_clip)
         self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
+        # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
         self.critic_optimizer.step()
 
         # update target networks
