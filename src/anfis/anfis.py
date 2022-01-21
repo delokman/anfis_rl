@@ -189,6 +189,13 @@ class JointAnfisNet(torch.nn.Module):
 
             out_name = self.layer['consequent'].mamdani_defs.names
 
+            if self.velocity:
+                out_name_vel = self.layer['consequent'].mamdani_defs_vel.names
+                out_index_vel = rules['outputs_membership_velocity']
+            else:
+                out_name_vel = None
+                out_index_vel = None
+
             rules = []
             for i in range(len(var_index)):
                 temp = []
@@ -198,7 +205,11 @@ class JointAnfisNet(torch.nn.Module):
 
                     temp.append(f"{name} is {list(vardefs[name].mfdefs.keys())[mem]}")
 
-                rules.append(f'Rule {i}: IF {" AND ".join(temp)} THEN {out_name[out_index[i][0]]}')
+                if self.velocity:
+                    out = f"{out_name[out_index[i][0]]} AND {out_name_vel[out_index_vel[i][0]]}"
+                else:
+                    out = out_name[out_index[i][0]]
+                rules.append(f'Rule {i}: IF {" AND ".join(temp)} THEN {out}')
             return '\n'.join(rules)
         else:
             rstr = []
