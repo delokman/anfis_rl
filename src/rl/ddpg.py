@@ -123,10 +123,14 @@ class DDPGAgent(torch.nn.Module):
         action = self.actor.forward(state)
 
         if self.use_cuda:
-            action = action.cpu().detach().numpy()[0, 0]
+            action = action.cpu().detach().numpy()
         else:
-            action = action.detach().numpy()[0, 0]
-        return action
+            action = action.detach().numpy()
+
+        if self.actor.velocity:
+            return action[0, 0], action[0, 1]
+        else:
+            return action[0, 0]
 
     def update(self, batch_size):
         if self.priority:
@@ -140,7 +144,7 @@ class DDPGAgent(torch.nn.Module):
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
-        actions = torch.reshape(actions, (batch_size, 1))
+        actions = torch.reshape(actions, (batch_size, self.num_actions))
         weights = torch.FloatTensor(weights)
 
         if self.use_cuda:
