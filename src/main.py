@@ -32,7 +32,7 @@ from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model, \
-    optimized_many_error_predefined_anfis_model
+    optimized_many_error_predefined_anfis_model, optimized_many_error_predefined_anfis_model_with_velocity
 from rl.utils import fuzzy_error, reward
 from test_course import test_course, test_course2, hard_course, test_course3, new_test_course_r_1, new_test_course_r_0_5
 
@@ -185,6 +185,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     jackal.wait_for_publisher()
 
     jackal.linear_velocity = params['linear_vel']
+    velocity = jackal.linear_velocity
 
     timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
     print("Path Timeout period", timeout_time)
@@ -196,6 +197,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     done = False
     max_yaw_rate = 4
+    max_velocity = 2
     update_step = 0
 
     start_time = rospy.get_time()
@@ -271,6 +273,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             #   for ddpg model
             control_law = agent.get_action(path_errors)
 
+            if agent.actor.velocity:
+                control_law, velocity = control_law
+
             if rule_weights is not None:
                 rule_weights.append(agent.actor.weights)
 
@@ -279,7 +284,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
             control_law = control_law.item() * params['control_mul']
 
-            if not np.isfinite(control_law):
+            if not np.isfinite(control_law) or not np.isfinite(velocity):
                 print("Error for control law resetting")
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
@@ -288,15 +293,21 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
             if control_law > max_yaw_rate:
                 control_law = max_yaw_rate
-            if control_law < -max_yaw_rate:
+            elif control_law < -max_yaw_rate:
                 control_law = -max_yaw_rate
 
+            if velocity > max_velocity:
+                velocity = max_velocity
+            elif velocity < -max_velocity:
+                velocity = -max_velocity
+
             jackal.control_law = control_law
+            jackal.linear_velocity = velocity
 
             rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
             rewards_cummulative.append(rewards)
 
-            add_to_memory(path_errors, rewards, control_law, agent, done)
+            add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
             if update_step % params['update_rate'] == 0 and train:
                 agent_update(agent, params['batch_size'], dist_e, rule_weights)
 
@@ -349,8 +360,8 @@ if __name__ == '__main__':
 
     # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
-    test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+    test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+    # test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
     extend_path(test_path)
 
@@ -373,8 +384,12 @@ if __name__ == '__main__':
 
     # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
     #                   actor_learning_rate=1e-4)
-    agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+    # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+    #                   actor_learning_rate=1e-4, priority=False)
+    agent = DDPGAgent(5, 2, optimized_many_error_predefined_anfis_model_with_velocity(), critic_learning_rate=1e-3,
+                      hidden_size=32,
                       actor_learning_rate=1e-4, priority=False)
+
     # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
     # agent.load_state_dict(torch.load('input'))
@@ -409,7 +424,8 @@ if __name__ == '__main__':
         'control_mul': 1. if is_simulation else 1.,
         'simulation': is_simulation,
         'actor_decay': scheduler2.gamma,
-        'critic_decay': scheduler1.gamma
+        'critic_decay': scheduler1.gamma,
+        'velocity_controlled': agent.actor.velocity
     }
 
     params.update(agent.input_params)
@@ -434,7 +450,8 @@ if __name__ == '__main__':
 
     for i in range(params['epoch_nums']):
         summary.add_scalar('model/learning', train, i)
-        mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise, train=train)
+        mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
+                                      train=train)
 
         if error_flag:
             agent.memory = copy.deepcopy(memory_backup)
