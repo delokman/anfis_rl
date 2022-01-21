@@ -31,10 +31,9 @@ from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, 
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
-from rl.predifined_anfis import predefined_anfis_model, many_error_predefined_anfis_model, \
-    optimized_many_error_predefined_anfis_model, optimized_many_error_predefined_anfis_model_with_velocity
+from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course, test_course3, new_test_course_r_1, new_test_course_r_0_5
+from test_course import test_course3
 
 import rospkg
 
@@ -82,7 +81,7 @@ def add_to_memory(new_state, rewards, control_law, agent, done):
 
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative,
-                        checkpoint, epoch, rule_weights=None):
+                        checkpoint, epoch, yaw_rates, velocities, rule_weights=None):
     plot_critic_weights(summary, agent, epoch)
 
     if rule_weights is not None and len(rule_weights) > 0:
@@ -142,6 +141,16 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
+    fig, ax = plt.subplots()
+    ax.plot(x, velocities)
+    fig.tight_layout()
+    summary.add_figure("Logs/Velocity", fig, global_step=epoch)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, yaw_rates)
+    fig.tight_layout()
+    summary.add_figure("Logs/Yaw Rate", fig, global_step=epoch)
+
     x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
@@ -159,11 +168,11 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-             rewards_cummulative, checkpoint, epoch, rule_weights):
+             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, rule_weights):
     try:
         print("Shutting down by saving data epoch:", epoch)
         summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                            rewards_cummulative, checkpoint, epoch, rule_weights)
+                            rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, rule_weights)
     except Exception:
         print("Error saving summary data on shutdown")
         traceback.print_exc()
@@ -195,6 +204,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     theta_near_errors = []
     rewards_cummulative = []
 
+    velocities = []
+    yaw_rates = []
+
     done = False
     max_yaw_rate = 4
     max_velocity = 2
@@ -208,7 +220,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                         rewards_cummulative, checkpoint, i, rule_weights))
+                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, rule_weights))
 
     if noise is not None:
         noise.reset()
@@ -285,7 +297,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             control_law = control_law.item() * params['control_mul']
 
             if not np.isfinite(control_law) or not np.isfinite(velocity):
-                print("Error for control law resetting")
+                print("Error for control law resetting", control_law, "velocity,", velocity)
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
                 error = True
@@ -300,6 +312,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
                 velocity = max_velocity
             elif velocity < -max_velocity:
                 velocity = -max_velocity
+
+            yaw_rates.append(control_law)
+            velocities.append(velocity)
 
             jackal.control_law = control_law
             jackal.linear_velocity = velocity
@@ -334,7 +349,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
-                                         rewards_cummulative, checkpoint, i, rule_weights)
+                                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, rule_weights)
 
     return dist_error_mae, error
 
@@ -360,8 +375,8 @@ if __name__ == '__main__':
 
     # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-    test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+    # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+    test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
     # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
     extend_path(test_path)
 
