@@ -136,7 +136,7 @@ def optimized_many_error_predefined_anfis_model_with_velocity():
         ('theta_near', JointTrapMembershipV3(*parameter_values[4], constant_center=True)),
     ]
 
-    output_names = ['angular_velocity']
+    output_names = ['angular_velocity', 'velocity']
 
     mambani = JointSymmetric9TriangleMembership(*parameter_values[5], True,
                                                 x_joint_definitons[0][1].required_dtype())
