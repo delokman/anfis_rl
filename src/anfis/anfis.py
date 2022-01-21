@@ -67,8 +67,9 @@ class JointAnfisNet(torch.nn.Module):
 
     def __init__(self, description, invardefs, outvarnames, rules_type=ConsequentLayerType.HYBRID,
                  mamdani_ruleset=None,
-                 mamdani_defs=None):
+                 mamdani_defs=None, velocity=False):
         super(JointAnfisNet, self).__init__()
+        self.velocity = velocity
         self.description = description
         self.outvarnames = outvarnames
         self.rules_type = rules_type
@@ -88,7 +89,8 @@ class JointAnfisNet(torch.nn.Module):
 
             rules = MamdaniAntecedentLayer(mamdani_ruleset)
             normalization = Normalization()
-            cl = MamdaniConsequentLayer(mamdani_defs, rules.mamdani_ruleset['outputs_membership'])
+            cl = MamdaniConsequentLayer(mamdani_defs, rules.mamdani_ruleset, velocity=velocity)
+
             output = ProductSum()
         else:
             rules = AntecedentLayer(mfdefs)
