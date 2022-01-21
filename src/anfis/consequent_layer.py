@@ -301,10 +301,19 @@ class SymmetricWeightsConsequentLayer(AbstractConsequentLayer):
 
 
 class MamdaniConsequentLayer(torch.nn.Module):
-    def __init__(self, mamdani_defs, output_membership_mapping) -> None:
+    def __init__(self, mamdani_defs, output_membership_mapping, velocity=False) -> None:
         super().__init__()
-        self.mamdani_defs = mamdani_defs
-        self.output_membership_mapping = output_membership_mapping
+        self.velocity = velocity
+        self.output_membership_mapping = output_membership_mapping['outputs_membership']
+
+        if velocity:
+            self.mamdani_defs = mamdani_defs[0]
+            self.mamdani_defs_vel = mamdani_defs[1]
+            self.output_membership_mapping_vel = output_membership_mapping['outputs_membership_velocity']
+        else:
+            self.mamdani_defs = mamdani_defs
+            self.mamdani_defs_vel = None
+            self.output_membership_mapping_vel = None
 
     def forward(self, x):
         self.mamdani_defs.cache()
@@ -329,7 +338,15 @@ class MamdaniConsequentLayer(torch.nn.Module):
         #         torch.stack(tuple(self.mamdani_defs[var] for var in membership_id))
         #         for membership_id in self.output_membership_mapping))
 
-        data = torch.stack(
-            [self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping]).unsqueeze(1)
+        if self.velocity:
+            self.mamdani_defs_vel.cache()
+
+            yaw = torch.stack([self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping])
+            vel = torch.stack([self.mamdani_defs_vel[membership_id_vel[0]] for membership_id_vel in
+                               self.output_membership_mapping_vel])
+            data = torch.stack((yaw, vel)).T
+        else:
+            data = torch.stack(
+                [self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping]).unsqueeze(1)
 
         return data
