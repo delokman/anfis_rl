@@ -415,6 +415,34 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     return mamdani_ruleset
 
 
+def dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel():
+    mamdani_ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near()
+
+    '''
+    0 = slow
+    1 = medium
+    2 = fast
+    '''
+
+    output = []
+
+    for i in mamdani_ruleset['outputs_membership']:
+        x = abs(i[0] - 4)
+
+        if x <= 1:
+            o = 2
+        elif x <= 3:
+            o = 1
+        else:
+            o = 0
+
+        output.append((o,))
+
+    mamdani_ruleset['outputs_membership_velocity'] = output
+
+    return mamdani_ruleset
+
+
 def dist_per_theta_near_theta_far():
     variable_rule_index = [
         (0, 1),  # 1
