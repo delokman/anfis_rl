@@ -68,10 +68,10 @@ def markdown_rule_table(anfis):
 
             temp.append(f"{name} is {list(vardefs[name].mfdefs.keys())[mem]}")
 
-            if uses_vel:
-                out = f"{out_name[out_index[i][0]]} | {out_name_vel[out_index_vel[i][0]]}"
-            else:
-                out = out_name[out_index[i][0]]
-            rules.append(f'| {i} | {" | ".join(temp)}|  {out} |')
+        if uses_vel:
+            out = f"{out_name[out_index[i][0]]} | {out_name_vel[out_index_vel[i][0]]}"
+        else:
+            out = out_name[out_index[i][0]]
+        rules.append(f'| {i} | {" | ".join(temp)}|  {out} |')
 
     return '\n'.join(rules)
