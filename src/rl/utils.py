@@ -40,7 +40,9 @@ def fuzzy_error(curr, tar, future, robot):
 
 
 def reward(errors, linear_vel, angular_vel):
-    DE_penalty_gain = 25
+    scale = 15.
+
+    DE_penalty_gain = 25 / 3
     DE_penalty_shape = 1
     HE_penalty_gain = 25
     HE_penalty_shape = 3
@@ -68,5 +70,5 @@ def reward(errors, linear_vel, angular_vel):
 
     angular_vel = np.abs(angular_vel) * steering_penalty_gain / (np.exp(dis_temp * steering_iwrt_DE)) * -1
 
-    rewards = dis + theta_near + theta_far + linear_vel + angular_vel
-    return rewards
+    rewards = (dis + theta_near + theta_far + linear_vel + angular_vel) / scale
+    return rewards, [dis / scale, theta_near / scale, theta_far / scale, linear_vel / scale, angular_vel / scale]
