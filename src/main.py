@@ -141,6 +141,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
+    x = np.arange(0, len(velocities))
     fig, ax = plt.subplots()
     ax.plot(x, velocities)
     fig.tight_layout()
