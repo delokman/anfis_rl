@@ -81,7 +81,7 @@ def add_to_memory(new_state, rewards, control_law, agent, done):
 
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative,
-                        checkpoint, epoch, yaw_rates, velocities, rule_weights=None):
+                        checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights=None):
     plot_critic_weights(summary, agent, epoch)
 
     if rule_weights is not None and len(rule_weights) > 0:
@@ -158,6 +158,12 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
 
+    fig, ax = plt.subplots()
+    temp = ax.plot(x, reward_components)
+    ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel'))
+    fig.tight_layout()
+    summary.add_figure("Graphs/Rewards Components", fig, global_step=epoch)
+
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
     agent.save_checkpoint(checkpoint_loc)
@@ -169,11 +175,12 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, rule_weights):
+             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights):
     try:
         print("Shutting down by saving data epoch:", epoch)
         summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                            rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, rule_weights)
+                            rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components,
+                            rule_weights)
     except Exception:
         print("Error saving summary data on shutdown")
         traceback.print_exc()
@@ -205,6 +212,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     theta_near_errors = []
     rewards_cummulative = []
 
+    reward_components = []
+
     velocities = []
     yaw_rates = []
 
@@ -221,7 +230,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, rule_weights))
+                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights))
 
     if noise is not None:
         noise.reset()
@@ -320,8 +329,9 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             jackal.control_law = control_law
             jackal.linear_velocity = velocity
 
-            rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
+            rewards, comps = reward(path_errors, jackal.linear_velocity, control_law)
             rewards_cummulative.append(rewards)
+            reward_components.append(comps)
 
             add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
             if update_step % params['update_rate'] == 0 and train:
@@ -350,7 +360,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
-                                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, rule_weights)
+                                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
+                                         rule_weights)
 
     return dist_error_mae, error
 
