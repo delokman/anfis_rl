@@ -329,7 +329,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             jackal.control_law = control_law
             jackal.linear_velocity = velocity
 
-            rewards, comps = reward(path_errors, jackal.linear_velocity, control_law)
+            rewards, comps = reward(path_errors, jackal.linear_velocity, control_law, params)
             rewards_cummulative.append(rewards)
             reward_components.append(comps)
 
@@ -454,6 +454,21 @@ if __name__ == '__main__':
         'critic_decay': scheduler1.gamma,
         'velocity_controlled': agent.actor.velocity
     }
+
+    reward_scales = {
+        'reward_scale': 15.,
+        'DE_penalty_gain': 25 / 3,
+        'DE_penalty_shape': 1,
+        'HE_penalty_gain': 25,
+        'HE_penalty_shape': 3,
+        'HE_iwrt_DE': 2,
+        'vel_reward_gain': 1,
+        'vel_iwrt_DE': 1,
+        'steering_penalty_gain': 1,
+        'steering_iwrt_DE': 4,
+    }
+
+    params.update(reward_scales)
 
     params.update(agent.input_params)
 

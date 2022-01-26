@@ -39,18 +39,18 @@ def fuzzy_error(curr, tar, future, robot):
     return [distance_target, distance_line, theta_lookahead, theta_far, theta_near]
 
 
-def reward(errors, linear_vel, angular_vel):
-    scale = 15.
+def reward(errors, linear_vel, angular_vel, params):
+    scale = params['reward_scale']
 
-    DE_penalty_gain = 25 / 3
-    DE_penalty_shape = 1
-    HE_penalty_gain = 25
-    HE_penalty_shape = 3
-    HE_iwrt_DE = 2
-    vel_reward_gain = 1
-    vel_iwrt_DE = 1
-    steering_penalty_gain = 1
-    steering_iwrt_DE = 4
+    DE_penalty_gain = params['DE_penalty_gain']
+    DE_penalty_shape = params['DE_penalty_shape']
+    HE_penalty_gain = params['HE_penalty_gain']
+    HE_penalty_shape = params['HE_penalty_shape']
+    HE_iwrt_DE = params['HE_iwrt_DE']
+    vel_reward_gain = params['vel_reward_gain']
+    vel_iwrt_DE = params['vel_iwrt_DE']
+    steering_penalty_gain = params['steering_penalty_gain']
+    steering_iwrt_DE = params['steering_iwrt_DE']
 
     if errors.shape[0] == 5:
         _, dis, _, theta_far, theta_near = errors
