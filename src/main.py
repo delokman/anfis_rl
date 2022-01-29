@@ -158,6 +158,9 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
 
+    total = sum(rewards_cummulative)
+    summary.add_scalar('Error/Total Reward', total, global_step=epoch)
+
     fig, ax = plt.subplots()
     temp = ax.plot(x, reward_components)
     ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel'))
