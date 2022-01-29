@@ -184,6 +184,7 @@ def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_er
         summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components,
                             rule_weights)
+        summary.close()
     except Exception:
         print("Error saving summary data on shutdown")
         traceback.print_exc()
@@ -521,5 +522,7 @@ if __name__ == '__main__':
 
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
+
+    summary.close()
 
     print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
