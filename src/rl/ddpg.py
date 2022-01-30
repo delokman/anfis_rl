@@ -3,6 +3,7 @@ import pathlib
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import optim
 
 from anfis.utils import save_fuzzy_membership_functions
@@ -162,7 +163,12 @@ class DDPGAgent(torch.nn.Module):
         next_actions = self.actor_target.forward(next_states)
         next_Q = self.critic_target.forward(next_states, next_actions)
         Qprime = rewards + self.gamma * next_Q
-        critic_loss = self.critic_criterion(Qvals * weights, Qprime * weights)
+        critic_loss = F.mse_loss(Qvals * weights, Qprime * weights)
+
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
+        self.critic_optimizer.step()
 
         # Actor loss
         policy_loss = self.critic.forward(states, self.actor.forward(states)).mean()
@@ -176,11 +182,6 @@ class DDPGAgent(torch.nn.Module):
 
         # torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.grad_clip)
         self.actor_optimizer.step()
-
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
-        self.critic_optimizer.step()
 
         # update target networks
         self.soft_update(self.actor_target, self.actor)
