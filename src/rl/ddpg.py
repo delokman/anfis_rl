@@ -44,8 +44,8 @@ class DDPGAgent(torch.nn.Module):
             'grad_clip': grad_clip,
         }
 
-        self.critic = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
-        self.critic_target = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
+        self.critic = Critic(self.num_states, self.num_actions)
+        self.critic_target = Critic(self.num_states, self.num_actions)
 
         for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
             target_param.data.copy_(param.data)
