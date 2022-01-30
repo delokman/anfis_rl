@@ -61,15 +61,19 @@ class DDPGAgent(torch.nn.Module):
         else:
             self.memory = Memory(max_memory_size)
 
-        self.critic_criterion = torch.nn.MSELoss(reduction='sum')
-        self.actor_optimizer = optim.SGD(self.actor.parameters(), lr=actor_learning_rate, momentum=0.99)
-        self.critic_optimizer = optim.SGD(self.critic.parameters(), lr=critic_learning_rate, momentum=0.99)
+        self.critic_criterion = torch.nn.MSELoss(reduction='mean')
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
+
+        param_type = [int, float, str, bool, torch.Tensor]
 
         for name, v in self.actor_optimizer.defaults.items():
-            self.input_params[f'actor_optim_{name}'] = v
+            if type(v) in param_type:
+                self.input_params[f'actor_optim_{name}'] = v
 
         for name, v in self.critic_optimizer.defaults.items():
-            self.input_params[f'critic_optim_{name}'] = v
+            if type(v) in param_type:
+                self.input_params[f'critic_optim_{name}'] = v
 
         if self.use_cuda:
             self.actor.cuda()
