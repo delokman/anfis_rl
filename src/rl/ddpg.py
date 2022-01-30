@@ -160,7 +160,7 @@ class DDPGAgent(torch.nn.Module):
         # Critic loss
         Qvals = self.critic.forward(states, actions)
         next_actions = self.actor_target.forward(next_states)
-        next_Q = self.critic_target.forward(next_states, next_actions.detach())
+        next_Q = self.critic_target.forward(next_states, next_actions)
         Qprime = rewards + self.gamma * next_Q
         critic_loss = self.critic_criterion(Qvals * weights, Qprime * weights)
 
