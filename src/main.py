@@ -461,14 +461,14 @@ if __name__ == '__main__':
 
     reward_scales = {
         'reward_scale': 15.,
-        'DE_penalty_gain': 25 / 3,
+        'DE_penalty_gain': 25 / 1.5,
         'DE_penalty_shape': 1,
-        'HE_penalty_gain': 25,
+        'HE_penalty_gain': 25 * 2,
         'HE_penalty_shape': 3,
         'HE_iwrt_DE': 2,
-        'vel_reward_gain': 1,
+        'vel_reward_gain': 2,
         'vel_iwrt_DE': 1,
-        'steering_penalty_gain': 1,
+        'steering_penalty_gain': 4,
         'steering_iwrt_DE': 4,
     }
 
