@@ -53,9 +53,12 @@ def reward(errors, linear_vel, angular_vel, params):
     steering_iwrt_DE = params['steering_iwrt_DE']
 
     if errors.shape[0] == 5:
-        _, dis, _, theta_far, theta_near = errors
+        # theta recovery = theta far
+
+        # theta far = theta lookahead
+        target, dis,  theta_far, theta_recovery, theta_near = errors
     else:
-        dis, theta_far, theta_near = errors
+        dis, theta_recovery, theta_near = errors
 
     dis_temp = np.abs(dis) / 1.0
     dis = (math.pow(dis_temp, DE_penalty_shape) + dis_temp) * -DE_penalty_gain
@@ -68,17 +71,17 @@ def reward(errors, linear_vel, angular_vel, params):
             1 + 1 / (np.exp(dis_temp * HE_iwrt_DE))) * -15
     theta_near /= 100
 
-    theta_far_temp = np.abs(theta_far) / np.pi
+    theta_far_temp = np.abs(theta_recovery) / np.pi
     theta_far_temp = 1 / (1 + np.exp(-4.5 * theta_far_temp)) - .5
     theta_far_temp *= 2
-    theta_far = math.pow(theta_far_temp, HE_penalty_shape) * HE_penalty_gain * (
+    theta_recovery = math.pow(theta_far_temp, HE_penalty_shape) * HE_penalty_gain * (
             1 + 1 / (np.exp(dis_temp * HE_iwrt_DE))) * -1.5
     # theta_far /= 6
-    theta_far /= 12
+    theta_recovery /= 12
 
     linear_vel = linear_vel * vel_reward_gain / (np.exp(dis_temp * vel_iwrt_DE)) + linear_vel * vel_reward_gain / 2
 
     angular_vel = np.abs(angular_vel) * steering_penalty_gain / (np.exp(dis_temp * steering_iwrt_DE)) * 1
 
-    rewards = (dis + theta_near + theta_far + linear_vel + angular_vel) / scale
-    return rewards, [dis / scale, theta_near / scale, theta_far / scale, linear_vel / scale, angular_vel / scale]
+    rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel) / scale
+    return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale]
