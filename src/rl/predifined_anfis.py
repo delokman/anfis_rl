@@ -124,7 +124,8 @@ def optimized_many_error_predefined_anfis_model_with_velocity():
 
         [0., 1., 1., 1., 1.],
 
-        [0.2, .8, 1.]
+        # [0.2, .8, 1.]
+        [0.2, 1, 2.]
     ]
 
     x_joint_definitons = [

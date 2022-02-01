@@ -218,4 +218,6 @@ def plot_critic_weights(summary, model, epoch):
 
     for name, layer in critic.named_parameters():
         name = name.replace(".", "/")
-        summary.add_histogram(name, layer, global_step=epoch)
+
+        if layer.nelement() != 0:
+            summary.add_histogram(name, layer, global_step=epoch)
