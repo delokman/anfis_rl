@@ -163,7 +163,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
     fig, ax = plt.subplots()
     temp = ax.plot(x, reward_components)
-    ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel'))
+    ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel', 'theta_lookahead'))
     fig.tight_layout()
     summary.add_figure("Graphs/Rewards Components", fig, global_step=epoch)
 
@@ -389,140 +389,142 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
-    # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
-    test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
-    extend_path(test_path)
+    for i in range(4):
 
-    name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
+        # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+        test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
+        extend_path(test_path)
 
-    print(name)
+        name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
 
-    is_simulation = is_gazebo_simulation()
+        print(name)
 
-    if is_simulation:
-        package_location = '/home/auvsl/python3_ws/src/anfis_rl'
-    else:
-        rospack = rospkg.RosPack()
-        package_location = rospack.get_path('anfis_rl')
+        is_simulation = is_gazebo_simulation()
 
-    print("Package Location:", package_location)
-
-    summary = SummaryWriter(f'{package_location}/runs/{name}')
-    os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
-
-    # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
-    #                   actor_learning_rate=1e-4)
-    # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
-    #                   actor_learning_rate=1e-4, priority=False)
-    agent = DDPGAgent(5, 2, optimized_many_error_predefined_anfis_model_with_velocity(), critic_learning_rate=1e-3,
-                      hidden_size=32,
-                      actor_learning_rate=1e-4, priority=False)
-
-    # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
-
-    # agent.load_state_dict(torch.load('input'))
-    plot_anfis_data(summary, -1, agent)
-    plot_critic_weights(summary, agent, -1)
-
-    loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
-    agent.save_checkpoint(loc)
-
-    checkpoint_saver = LowestCheckpoint()
-
-    stop_epoch = 1000
-
-    scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=1, verbose=True)
-    scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=1, verbose=True)
-
-    print("Is a simulation:", is_simulation)
-
-    if is_simulation:
-        noise = None
-        # noise = OUNoise(np.array([
-        #     [-4, 4],
-        # ]))
-    else:
-        noise = None
-
-    params = {
-        'linear_vel': 1.5,
-        'batch_size': 32,
-        'update_rate': 5,
-        'epoch_nums': 100,
-        'control_mul': 1. if is_simulation else 1.,
-        'simulation': is_simulation,
-        'actor_decay': scheduler2.gamma,
-        'critic_decay': scheduler1.gamma,
-        'velocity_controlled': agent.actor.velocity
-    }
-
-    reward_scales = {
-        'reward_scale': 15.,
-        'DE_penalty_gain': 25 / 1.5,
-        'DE_penalty_shape': 1,
-        'HE_penalty_gain': 25 * 2,
-        'HE_penalty_shape': 3,
-        'HE_iwrt_DE': 2,
-        'vel_reward_gain': 2,
-        'vel_iwrt_DE': 1,
-        'steering_penalty_gain': 4,
-        'steering_iwrt_DE': 4,
-    }
-
-    params.update(reward_scales)
-
-    params.update(agent.input_params)
-
-    with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
-        json.dump(params, file)
-
-    pauser = BluetoothEStop()
-
-    jackal = Jackal()
-
-    summary.add_text('Rules', markdown_rule_table(agent.actor))
-
-    memory_backup = copy.deepcopy(agent.memory)
-
-    summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
-    summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
-
-    error_threshold = 0.075
-
-    train = True
-
-    for i in range(params['epoch_nums']):
-        summary.add_scalar('model/learning', train, i)
-        mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
-                                      train=train)
-
-        if error_flag:
-            agent.memory = copy.deepcopy(memory_backup)
+        if is_simulation:
+            package_location = '/home/auvsl/python3_ws/src/anfis_rl'
         else:
-            memory_backup = copy.deepcopy(agent.memory)
+            rospack = rospkg.RosPack()
+            package_location = rospack.get_path('anfis_rl')
 
-            # if i < stop_epoch:
-            if mae_error < error_threshold:
-                if train:
-                    print("DISABLED TRAINING")
-                    train = False
-                    agent.eval()
+        print("Package Location:", package_location)
+
+        summary = SummaryWriter(f'{package_location}/runs/{name}')
+        os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
+
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+        #                   actor_learning_rate=1e-4)
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+        #                   actor_learning_rate=1e-4, priority=False)
+        agent = DDPGAgent(5, 2, optimized_many_error_predefined_anfis_model_with_velocity(), critic_learning_rate=1e-3,
+                          hidden_size=32,
+                          actor_learning_rate=1e-4, priority=False)
+
+        # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
+
+        # agent.load_state_dict(torch.load('input'))
+        plot_anfis_data(summary, -1, agent)
+        plot_critic_weights(summary, agent, -1)
+
+        loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
+        agent.save_checkpoint(loc)
+
+        checkpoint_saver = LowestCheckpoint()
+
+        stop_epoch = 1000
+
+        scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=1, verbose=True)
+        scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=1, verbose=True)
+
+        print("Is a simulation:", is_simulation)
+
+        if is_simulation:
+            noise = None
+            # noise = OUNoise(np.array([
+            #     [-4, 4],
+            # ]))
+        else:
+            noise = None
+
+        params = {
+            'linear_vel': 1.5,
+            'batch_size': 32,
+            'update_rate': 5,
+            'epoch_nums': 100,
+            'control_mul': 1. if is_simulation else 1.,
+            'simulation': is_simulation,
+            'actor_decay': scheduler2.gamma,
+            'critic_decay': scheduler1.gamma,
+            'velocity_controlled': agent.actor.velocity
+        }
+
+        reward_scales = {
+            'reward_scale': 15.,
+            'DE_penalty_gain': 25 / 1.5,
+            'DE_penalty_shape': 1,
+            'HE_penalty_gain': 25 * 2,
+            'HE_penalty_shape': 3,
+            'HE_iwrt_DE': 2,
+            'vel_reward_gain': 2,
+            'vel_iwrt_DE': 1,
+            'steering_penalty_gain': 4,
+            'steering_iwrt_DE': 4,
+        }
+
+        params.update(reward_scales)
+
+        params.update(agent.input_params)
+
+        with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
+            json.dump(params, file)
+
+        pauser = BluetoothEStop()
+
+        jackal = Jackal()
+
+        summary.add_text('Rules', markdown_rule_table(agent.actor))
+
+        memory_backup = copy.deepcopy(agent.memory)
+
+        summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
+        summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
+
+        error_threshold = 0.0075
+
+        train = True
+
+        for i in range(params['epoch_nums']):
+            summary.add_scalar('model/learning', train, i)
+            mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
+                                          train=train)
+
+            if error_flag:
+                agent.memory = copy.deepcopy(memory_backup)
             else:
-                if not train:
-                    print("RE-ENABLED TRAINING")
-                    train = True
-                    agent.train()
+                memory_backup = copy.deepcopy(agent.memory)
 
-                scheduler1.step()
-                scheduler2.step()
-            # sys.exit()
+                # if i < stop_epoch:
+                if mae_error < error_threshold:
+                    if train:
+                        print("DISABLED TRAINING")
+                        train = False
+                        agent.eval()
+                else:
+                    if not train:
+                        print("RE-ENABLED TRAINING")
+                        train = True
+                        agent.train()
 
-        summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
-        summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
+                    scheduler1.step()
+                    scheduler2.step()
+                # sys.exit()
 
-    summary.close()
+            summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
+            summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
 
-    print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
+        summary.close()
+
+        print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
