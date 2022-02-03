@@ -472,6 +472,16 @@ if __name__ == '__main__':
             'vel_iwrt_DE': 1,
             'steering_penalty_gain': 4,
             'steering_iwrt_DE': 4,
+            'dis_scale':  1,
+            'sigmoid_near':  25,
+            'scale_near':  -15 / 100,
+            'sigmoid_recovery':  4.5,
+            'scale_recovery':  -1.5 / 12,
+            'exp_lookahead':  1,
+            'scale_lookahead':  -100 / 2 / 1.5,
+            'max_angular_vel': 4,
+            'scale_vel': 1 / 2,
+            'scale_ang_vel': 1
         }
 
         params.update(reward_scales)

@@ -40,7 +40,7 @@ def fuzzy_error(curr, tar, future, robot):
 
 
 # computes the reward for inputs of the given structure
-def prize(state, scalar, penalty_gain, add, abs_dis, iwrt_DE):
+def sub_reward(state, scalar, penalty_gain, add, abs_dis, iwrt_DE):
     """ theta = math.pow(input, HE_penalty_shape)
           ang = np.abs(angular_vel)
       theta_near  = scalar *      theta * HE_penalty_gain       * (1 + 1 / (np.exp(dis_temp * HE_iwrt_DE)))
@@ -61,17 +61,6 @@ def scaled_sigmoid(state, c1, c2=np.pi, c3=2, c4=-0.5):
 
 
 def reward(errors, linear_vel, angular_vel, params):
-    dis_scale = 1
-    sigmoid_near = 25
-    scale_near = -15 / 100
-    sigmoid_recovery = 4.5
-    scale_recovery = -1.5 / 12
-    exp_lookahead = 1
-    scale_lookahead = -100 / 2 / 1.5
-    max_angular_vel = 4
-    scale_vel = 1 / 2
-    scale_ang_vel = 1
-
     scale = params['reward_scale']
     DE_penalty_gain = params['DE_penalty_gain']
     DE_penalty_shape = params['DE_penalty_shape']
@@ -82,6 +71,16 @@ def reward(errors, linear_vel, angular_vel, params):
     vel_iwrt_DE = params['vel_iwrt_DE']
     steering_penalty_gain = params['steering_penalty_gain']
     steering_iwrt_DE = params['steering_iwrt_DE']
+    dis_scale = params['dis_scale']
+    sigmoid_near = params['sigmoid_near']
+    scale_near = params['scale_near']
+    sigmoid_recovery = params['sigmoid_recovery']
+    scale_recovery = params['scale_recovery']
+    exp_lookahead = params['exp_lookahead']
+    scale_lookahead = params['scale_lookahead']
+    max_angular_vel = params['max_angular_vel']
+    scale_vel = params['scale_vel']
+    scale_ang_vel = params['scale_ang_vel']
 
     if errors.shape[0] == 5:
         # theta recovery = theta far
@@ -96,20 +95,20 @@ def reward(errors, linear_vel, angular_vel, params):
 
     scaled_theta_near = scaled_sigmoid(theta_near, sigmoid_near)
     theta_n = math.pow(scaled_theta_near, HE_penalty_shape)
-    theta_near = prize(theta_n, scale_near, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
+    theta_near = sub_reward(theta_n, scale_near, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
 
     scaled_theta_recovery = scaled_sigmoid(theta_recovery, sigmoid_recovery)
     theta_r = math.pow(scaled_theta_recovery, HE_penalty_shape)
-    theta_recovery = prize(theta_r, scale_recovery, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
+    theta_recovery = sub_reward(theta_r, scale_recovery, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
 
     scaled_theta_lh = scaled_input(theta_lookahead)
     max_turn_r = np.abs(linear_vel) / max_angular_vel  # linear vel / max turn velocity
     theta_lookahead = scale_lookahead * scaled_theta_lh * np.exp(-exp_lookahead * max_turn_r * target)
 
-    linear_vel = prize(linear_vel, scale_vel, vel_reward_gain, 1, scaled_dis, vel_iwrt_DE)
+    linear_vel = sub_reward(linear_vel, scale_vel, vel_reward_gain, 1, scaled_dis, vel_iwrt_DE)
 
     abs_angular_vel = np.abs(angular_vel)
-    angular_vel = prize(abs_angular_vel, scale_ang_vel, steering_penalty_gain, 0, scaled_dis, steering_iwrt_DE)
+    angular_vel = sub_reward(abs_angular_vel, scale_ang_vel, steering_penalty_gain, 0, scaled_dis, steering_iwrt_DE)
 
     rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel + theta_lookahead) / scale
     return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,
