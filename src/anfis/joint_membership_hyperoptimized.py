@@ -2,9 +2,11 @@ from abc import abstractmethod
 from collections import OrderedDict
 
 import torch
-# from line_profiler_pycharm import profile
 
 from anfis.joint_membership import _mk_param, JointMembership
+
+
+# from line_profiler_pycharm import profile
 
 
 class JointMembershipHyperOptimized(JointMembership):
@@ -26,7 +28,6 @@ class JointMembershipHyperOptimized(JointMembership):
         # mask = y_pred < 0
         # a = 0.01
         # y_pred[mask] = a * (torch.exp(y_pred[mask]) - 1)
-
 
         # a = 1.6732632423543772848170429916717
         # l = 1.0507009873554804934193349852946

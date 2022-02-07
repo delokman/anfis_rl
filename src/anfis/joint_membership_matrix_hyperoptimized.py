@@ -2,9 +2,11 @@ from abc import abstractmethod
 from collections import OrderedDict
 
 import torch
-# from line_profiler_pycharm import profile
 
 from anfis.joint_membership import _mk_param, JointMembership
+
+
+# from line_profiler_pycharm import profile
 
 
 class JointMembershipHyperOptimized(JointMembership):

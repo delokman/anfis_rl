@@ -1,8 +1,9 @@
 # THIS CODE WAS TAKEN FROM https://github.com/openai/baselines/blob/master/baselines/deepq/replay_buffer.py ALL CREDIT FOR IT GOES TO THEM
 # https://github.com/Guillaume-Cr/lunar_lander_per/blob/master/replay_buffer.py
 
-import numpy as np
 import random
+
+import numpy as np
 
 from rl.segment_tree import SumSegmentTree, MinSegmentTree
 
