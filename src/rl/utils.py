@@ -79,8 +79,6 @@ def reward(errors, linear_vel, angular_vel, params):
     exp_lookahead = params['exp_lookahead']
     scale_lookahead = params['scale_lookahead']
     max_angular_vel = params['max_angular_vel']
-    scale_vel = params['scale_vel']
-    scale_ang_vel = params['scale_ang_vel']
 
     if errors.shape[0] == 5:
         # theta recovery = theta far
@@ -105,10 +103,17 @@ def reward(errors, linear_vel, angular_vel, params):
     max_turn_r = np.abs(linear_vel) / max_angular_vel  # linear vel / max turn velocity
     theta_lookahead = scale_lookahead * scaled_theta_lh * np.exp(-exp_lookahead * max_turn_r * target)
 
-    linear_vel = sub_reward(linear_vel, scale_vel, vel_reward_gain, 1, scaled_dis, vel_iwrt_DE)
+    # vel_iwrt_DE = vel_iwrt_DE * 10
+    vel_iwrt_DE = vel_iwrt_DE
+
+    linear_vel = sub_reward(linear_vel, 1, vel_reward_gain, 0, scaled_dis, vel_iwrt_DE) #+ \
+                 #linear_vel ** 2 * np.log((target + 1)) * .5 / 1.5  # / np.exp(linear_vel * vel_iwrt_DE)
+    # linear_vel * np.log((target + 1) ** 5.6) * .5 / np.exp(linear_vel * vel_iwrt_DE)
 
     abs_angular_vel = np.abs(angular_vel)
-    angular_vel = sub_reward(abs_angular_vel, scale_ang_vel, steering_penalty_gain, 0, scaled_dis, steering_iwrt_DE)
+    angular_vel = sub_reward(abs_angular_vel, 1, steering_penalty_gain, 0, scaled_dis,
+                             steering_iwrt_DE) / 1.5
+    angular_vel = 0
 
     rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel + theta_lookahead) / scale
     return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,

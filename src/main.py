@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
+from test_course import test_course, test_course3
 from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
@@ -33,7 +34,6 @@ from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
 from rl.utils import fuzzy_error, reward
-from test_course import test_course3
 
 import rospkg
 
@@ -391,10 +391,10 @@ if __name__ == '__main__':
 
     for i in range(4):
 
-        # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-        # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
         test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
         # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
         extend_path(test_path)
 
@@ -453,7 +453,7 @@ if __name__ == '__main__':
             'linear_vel': 1.5,
             'batch_size': 32,
             'update_rate': 5,
-            'epoch_nums': 100,
+            'epoch_nums': 50,
             'control_mul': 1. if is_simulation else 1.,
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
@@ -480,8 +480,6 @@ if __name__ == '__main__':
             'exp_lookahead': 1,
             'scale_lookahead': -100 / 2 / 1.5,
             'max_angular_vel': 4,
-            'scale_vel': 1 / 2,
-            'scale_ang_vel': 1
         }
 
         params.update(reward_scales)
