@@ -453,7 +453,7 @@ if __name__ == '__main__':
             'linear_vel': 1.5,
             'batch_size': 32,
             'update_rate': 5,
-            'epoch_nums': 50,
+            'epoch_nums': 100,
             'control_mul': 1. if is_simulation else 1.,
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
