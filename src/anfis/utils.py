@@ -17,6 +17,14 @@ from anfis.joint_membership import JointMembership
 dtype = torch.float
 
 
+class EmptyGrad:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 def plotErrors(errors):
     """
         Plot the given list of error rates against no. of epochs
