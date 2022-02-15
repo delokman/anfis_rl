@@ -104,6 +104,12 @@ class JointAnfisNet(torch.nn.Module):
             else:
                 cl = PlainConsequentLayer(self.num_in, self.num_rules, self.num_out, self.dtype)
 
+        self.fuzzified = None
+        self.raw_weights = None
+        self.weights = None
+        self.rule_tsk = None
+        self.y_pred = None
+
         self.layer = torch.nn.ModuleDict(OrderedDict([
             ('fuzzify', JointFuzzifyLayer(mfdefs, varnames)),
             ('rules', rules),
