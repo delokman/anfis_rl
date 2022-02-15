@@ -63,8 +63,10 @@ class DDPGAgent(torch.nn.Module):
             self.memory = Memory(max_memory_size)
 
         self.critic_criterion = torch.nn.MSELoss(reduction='mean')
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
+        self.actor_optimizer = optim.RAdam(self.actor.parameters(), lr=actor_learning_rate)
+        # self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
+        self.critic_optimizer = optim.RAdam(self.critic.parameters(), lr=critic_learning_rate)
+        # self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
 
         param_type = [int, float, str, bool, torch.Tensor]
 
