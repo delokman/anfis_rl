@@ -185,9 +185,9 @@ class JointSymmetric3TriangleMembership(JointMamdaniMembership):
         # self.abs_cache['medium'] = torch.abs(self.medium)
         # self.abs_cache['fast'] = torch.abs(self.fast)
 
-        self.abs_cache['slow'] = self.slow
-        self.abs_cache['medium'] = self.medium
-        self.abs_cache['fast'] = self.fast
+        self.abs_cache['slow'] = torch.abs(self.slow)
+        self.abs_cache['medium'] = torch.abs(self.medium)
+        self.abs_cache['fast'] = torch.abs(self.fast)
 
         for key, val in self.output_function.items():
             self.cache_output_values[key] = val()
@@ -200,12 +200,12 @@ class JointSymmetric3TriangleMembership(JointMamdaniMembership):
         return self.abs_cache['slow']
 
     def get_medium(self):
-        # return self.get_slow() + self.abs_cache['medium']
-        return self.abs_cache['medium']
+        return self.get_slow() + self.abs_cache['medium']
+        # return self.abs_cache['medium']
 
     def get_fast(self):
-        # return self.get_medium() + self.abs_cache['fast']
-        return self.abs_cache['fast']
+        return self.get_medium() + self.abs_cache['fast']
+        # return self.abs_cache['fast']
 
     def to_cuda(self):
         pass
