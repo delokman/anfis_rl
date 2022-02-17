@@ -1,17 +1,19 @@
-#! /usr/bin/env python
+﻿#! /usr/bin/env python
 # coding=utf-8
-
+import copy
 import datetime
 import json
 import os
 import random
+import traceback
 
 import matplotlib
+from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
-from rl.noise import OUNoise
+from test_course import test_course, test_course3
 from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
@@ -30,9 +32,8 @@ from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, 
 from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
-from rl.predifined_anfis import predefined_anfis_model
+from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course, test_course3
 
 import rospkg
 
@@ -65,30 +66,36 @@ def plot_anfis_data(summary, epoch, agent):
     plot_fuzzy_variables(summary, anfis, epoch)
 
 
-def agent_update(new_state, rewards, control_law, agent, done, batch_size, dis_error, rule_weights=None):
+def agent_update(agent, batch_size, dis_error, rule_weights=None):
+    if len(agent.memory) > batch_size:
+        agent.update(batch_size)
+
+
+def add_to_memory(new_state, rewards, control_law, agent, done):
     ####do this every 0.075 s
     state = agent.curr_states
     new_state = np.array(new_state)
     agent.curr_states = new_state
     agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
-    if len(agent.memory) > batch_size and np.abs(dis_error) > 0.10:
-        agent.update(batch_size)
-
-        if rule_weights is not None:
-            rule_weights.append(agent.actor.weights)
 
 
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative,
-                        checkpoint, epoch, rule_weights=None):
+                        checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights=None):
     plot_critic_weights(summary, agent, epoch)
 
-    if rule_weights is not None:
+    if rule_weights is not None and len(rule_weights) > 0:
         fig, ax = plt.subplots()
 
         averages = torch.mean(torch.mean(torch.stack(rule_weights), dim=1), dim=0)
         rule_ids = [_ for _ in range(averages.shape[0])]
-        ax.bar(rule_ids, averages.detach().numpy())
+
+        if agent.use_cuda:
+            averages = averages.cpu().detach().numpy()
+        else:
+            averages = averages.detach().numpy()
+
+        ax.bar(rule_ids, averages)
         ax.set_xticks(rule_ids)
         ax.set_ylabel('Rule weight')
         ax.set_xlabel('Rule')
@@ -134,11 +141,31 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
+    x = np.arange(0, len(velocities))
+    fig, ax = plt.subplots()
+    ax.plot(x, velocities)
+    fig.tight_layout()
+    summary.add_figure("Logs/Velocity", fig, global_step=epoch)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, yaw_rates)
+    fig.tight_layout()
+    summary.add_figure("Logs/Yaw Rate", fig, global_step=epoch)
+
     x = np.arange(0, len(rewards_cummulative))
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
     fig.tight_layout()
     summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
+
+    total = sum(rewards_cummulative)
+    summary.add_scalar('Error/Total Reward', total, global_step=epoch)
+
+    fig, ax = plt.subplots()
+    temp = ax.plot(x, reward_components)
+    ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel', 'theta_lookahead'))
+    fig.tight_layout()
+    summary.add_figure("Graphs/Rewards Components", fig, global_step=epoch)
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
@@ -151,20 +178,26 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-             rewards_cummulative, checkpoint, epoch, rule_weights):
-    print("Shutting down by saving data epoch:", epoch)
-    summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                        rewards_cummulative, checkpoint, epoch, rule_weights)
+             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights):
+    try:
+        print("Shutting down by saving data epoch:", epoch)
+        summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                            rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components,
+                            rule_weights)
+        summary.close()
+    except Exception:
+        print("Error saving summary data on shutdown")
+        traceback.print_exc()
 
 
-def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None):
+def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=None, show_gradients=False, train=True):
     rule_weights = []
 
     print(f"EPOCH {i}")
     reset_world(params['simulation'])
     pauser.wait_for_publisher()
 
-    rate = rospy.Rate(1000)
+    rate = rospy.Rate(60)
 
     jackal.clear_pose()
     path = Path(path)
@@ -173,6 +206,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     jackal.wait_for_publisher()
 
     jackal.linear_velocity = params['linear_vel']
+    velocity = jackal.linear_velocity
 
     timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
     print("Path Timeout period", timeout_time)
@@ -182,8 +216,14 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     theta_near_errors = []
     rewards_cummulative = []
 
+    reward_components = []
+
+    velocities = []
+    yaw_rates = []
+
     done = False
     max_yaw_rate = 4
+    max_velocity = 2
     update_step = 0
 
     start_time = rospy.get_time()
@@ -194,10 +234,17 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                         rewards_cummulative, checkpoint, i, rule_weights))
+                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights))
 
     if noise is not None:
         noise.reset()
+
+    if show_gradients:
+        grad_distribution = {'all': []}
+        for name, p in agent.actor.named_parameters():
+            grad_distribution[name] = []
+
+    error = False
 
     with tqdm(total=path.path_length) as pbar:
         while not rospy.is_shutdown():
@@ -220,11 +267,15 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
                 break
 
             path_errors = fuzzy_error(current_point, target_point, future_point, jackal)
 
-            dist_e, theta_far, theta_near = path_errors
+            if len(path_errors) == 3:
+                dist_e, theta_far, theta_near = path_errors
+            elif len(path_errors) == 5:
+                _, dist_e, _, theta_far, theta_near = path_errors
 
             if np.isfinite(dist_e):
                 distance_errors.append(dist_e)
@@ -234,11 +285,13 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
                 if not params['simulation'] and dist_e > 4:
                     print("Reloading from save,", checkpoint.checkpoint_location)
                     checkpoint.reload(agent)
+                    error = True
                     break
             else:
                 print("Error!!!", path_errors)
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
                 break
 
             path_errors = np.array(path_errors)
@@ -246,28 +299,52 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             #   for ddpg model
             control_law = agent.get_action(path_errors)
 
+            if agent.actor.velocity:
+                control_law, velocity = control_law
+
+            if rule_weights is not None:
+                rule_weights.append(agent.actor.weights)
+
             if noise is not None:
                 control_law = noise.get_action(control_law, update_step)
 
             control_law = control_law.item() * params['control_mul']
 
-            if not np.isfinite(control_law):
-                print("Error for control law resetting")
+            if not np.isfinite(control_law) or not np.isfinite(velocity):
+                print("Error for control law resetting", control_law, "velocity,", velocity)
                 print("Reloading from save,", checkpoint.checkpoint_location)
                 checkpoint.reload(agent)
+                error = True
+                break
 
             if control_law > max_yaw_rate:
                 control_law = max_yaw_rate
-            if control_law < -max_yaw_rate:
+            elif control_law < -max_yaw_rate:
                 control_law = -max_yaw_rate
 
+            if velocity > max_velocity:
+                velocity = max_velocity
+            elif velocity < -max_velocity:
+                velocity = -max_velocity
+
+            yaw_rates.append(control_law)
+            velocities.append(velocity)
+
             jackal.control_law = control_law
+            jackal.linear_velocity = velocity
 
-            rewards = reward(path_errors, jackal.linear_velocity, control_law) / 15.
+            rewards, comps = reward(path_errors, jackal.linear_velocity, control_law, params)
             rewards_cummulative.append(rewards)
+            reward_components.append(comps)
 
-            if update_step % params['update_rate'] == 0:
-                agent_update(path_errors, rewards, control_law, agent, done, params['batch_size'], dist_e, rule_weights)
+            add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
+            if update_step % params['update_rate'] == 0 and train:
+                agent_update(agent, params['batch_size'], dist_e, rule_weights)
+
+                if show_gradients and len(agent.memory) > params['batch_size']:
+                    for name, p in agent.actor.named_parameters():
+                        grad_distribution['all'].append(p.grad)
+                        grad_distribution[name].append(p.grad)
 
             update_step += 1
             # print(control_law)
@@ -280,16 +357,26 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     jackal.control_law = 0
     jackal.pub_motion()
 
+    if show_gradients:
+        for name, values in grad_distribution.items():
+            dist = torch.stack(values)
+            summary.add_histogram(f"Gradients/{name}", dist, global_step=i)
+
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
-                                         rewards_cummulative, checkpoint, i)
+                                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
+                                         rule_weights)
 
-    return dist_error_mae
+    return dist_error_mae, error
 
 
 def extend_path(path):
     before_end, end = np.array(path[-2]), np.array(path[-1])
-    after_end = (end - before_end) + end
+
+    diff = (end - before_end)
+    diff /= np.linalg.norm(diff)
+
+    after_end = diff * 10 + end
 
     path.append(after_end)
 
@@ -302,68 +389,150 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
-    # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
-    # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
-    test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
-    extend_path(test_path)
+    for i in range(4):
 
-    name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
+        # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
+        test_path = test_course3()  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = hard_course(400)  ####testcoruse MUST start with 0,0 . Check this out
+        # test_path = new_test_course_r_1()  ####testcoruse MUST start with 0,0 . Check this out
+        extend_path(test_path)
 
-    print(name)
+        name = f'Gazebo RL {datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
 
-    rospack = rospkg.RosPack()
-    package_location = rospack.get_path('anfis_rl')
+        print(name)
 
-    print("Package Location:", package_location)
+        is_simulation = is_gazebo_simulation()
 
-    summary = SummaryWriter(f'{package_location}/runs/{name}')
-    os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
+        if is_simulation:
+            package_location = '/home/auvsl/python3_ws/src/anfis_rl'
+        else:
+            rospack = rospkg.RosPack()
+            package_location = rospack.get_path('anfis_rl')
 
-    agent = DDPGAgent(3, 1, predefined_anfis_model())
-    # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
+        print("Package Location:", package_location)
 
-    # agent.load_state_dict(torch.load('input'))
-    plot_anfis_data(summary, -1, agent)
-    plot_critic_weights(summary, agent, -1)
+        summary = SummaryWriter(f'{package_location}/runs/{name}')
+        os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-    loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
-    agent.save_checkpoint(loc)
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+        #                   actor_learning_rate=1e-4)
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
+        #                   actor_learning_rate=1e-4, priority=False)
+        agent = DDPGAgent(5, 2, optimized_many_error_predefined_anfis_model_with_velocity(), critic_learning_rate=1e-3,
+                          hidden_size=32,
+                          actor_learning_rate=1e-4, priority=False)
 
-    checkpoint_saver = LowestCheckpoint()
+        # agent.critic.load_state_dict(torch.load(f'{package_location}/critic.weights'))
 
-    is_simulation = is_gazebo_simulation()
+        # agent.load_state_dict(torch.load('input'))
+        plot_anfis_data(summary, -1, agent)
+        plot_critic_weights(summary, agent, -1)
 
-    print("Is a simulation:", is_simulation)
+        loc = os.path.join(summary.get_logdir(), "checkpoints", f"0.chkp")
+        agent.save_checkpoint(loc)
 
-    if is_simulation:
-        noise = OUNoise(np.array([
-            [-4, 4],
-        ]))
-    else:
-        noise = None
+        checkpoint_saver = LowestCheckpoint()
 
-    params = {
-        'linear_vel': 1.5,
-        'batch_size': 128,
-        'update_rate': 100,
-        'epoch_nums': 100,
-        'control_mul': 1. if is_simulation else 1.,
-        'simulation': is_simulation
-    }
+        stop_epoch = 1000
 
-    params.update(agent.input_params)
+        scheduler1 = ExponentialLR(agent.critic_optimizer, gamma=1, verbose=True)
+        scheduler2 = ExponentialLR(agent.actor_optimizer, gamma=1, verbose=True)
 
-    with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
-        json.dump(params, file)
+        print("Is a simulation:", is_simulation)
 
-    pauser = BluetoothEStop()
+        if is_simulation:
+            noise = None
+            # noise = OUNoise(np.array([
+            #     [-4, 4],
+            # ]))
+        else:
+            noise = None
 
-    jackal = Jackal()
+        params = {
+            'linear_vel': 1.5,
+            'batch_size': 32,
+            'update_rate': 5,
+            'epoch_nums': 100,
+            'control_mul': 1. if is_simulation else 1.,
+            'simulation': is_simulation,
+            'actor_decay': scheduler2.gamma,
+            'critic_decay': scheduler1.gamma,
+            'velocity_controlled': agent.actor.velocity
+        }
 
-    summary.add_text('Rules', markdown_rule_table(agent.actor))
+        reward_scales = {
+            'reward_scale': 15.,
+            'DE_penalty_gain': 25 / 1.5,
+            'DE_penalty_shape': 1,
+            'HE_penalty_gain': 25 * 2,
+            'HE_penalty_shape': 3,
+            'HE_iwrt_DE': 2,
+            'vel_reward_gain': 2,
+            'vel_iwrt_DE': 1,
+            'steering_penalty_gain': 4,
+            'steering_iwrt_DE': 4,
+            'dis_scale': 1,
+            'sigmoid_near': 25,
+            'scale_near': -15 / 100,
+            'sigmoid_recovery': 4.5,
+            'scale_recovery': -1.5 / 12,
+            'exp_lookahead': 1,
+            'scale_lookahead': -100 / 2 / 1.5,
+            'max_angular_vel': 4,
+        }
 
-    for i in range(params['epoch_nums']):
-        epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise)
+        params.update(reward_scales)
 
-    print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
+        params.update(agent.input_params)
+
+        with open(os.path.join(summary.get_logdir(), "params.json"), 'w') as file:
+            json.dump(params, file)
+
+        pauser = BluetoothEStop()
+
+        jackal = Jackal()
+
+        summary.add_text('Rules', markdown_rule_table(agent.actor))
+
+        memory_backup = copy.deepcopy(agent.memory)
+
+        summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
+        summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
+
+        error_threshold = 0.0075
+
+        train = True
+
+        for i in range(params['epoch_nums']):
+            summary.add_scalar('model/learning', train, i)
+            mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
+                                          train=train)
+
+            if error_flag:
+                agent.memory = copy.deepcopy(memory_backup)
+            else:
+                memory_backup = copy.deepcopy(agent.memory)
+
+                # if i < stop_epoch:
+                if mae_error < error_threshold:
+                    if train:
+                        print("DISABLED TRAINING")
+                        train = False
+                        agent.eval()
+                else:
+                    if not train:
+                        print("RE-ENABLED TRAINING")
+                        train = True
+                        agent.train()
+
+                    scheduler1.step()
+                    scheduler2.step()
+                # sys.exit()
+
+            summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
+            summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
+
+        summary.close()
+
+        print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)

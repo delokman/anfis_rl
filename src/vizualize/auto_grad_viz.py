@@ -87,7 +87,7 @@ def make_dot(var, params, parameter_values=None):
     seen = set()
 
     def size_to_str(size):
-        return '(' + (', ').join(['%d' % v for v in size]) + ')'
+        return '(' + ', '.join(['%d' % v for v in size]) + ')'
 
     def get_attr(id):
         if (parameter_values is None) or (id not in parameter_values):

@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from collections import OrderedDict
 
 import numpy as np
@@ -6,7 +7,28 @@ import torch
 from anfis.joint_membership import _mk_param, JointMembership
 
 
-class JointDiffSigmoidMembershipV2(JointMembership):
+class JointMembershipOptimized(JointMembership):
+    def __init__(self):
+        super(JointMembershipOptimized, self).__init__()
+
+    @abstractmethod
+    def compute(self, x):
+        pass
+
+    def forward(self, x):
+        if self.is_cuda and not x.is_cuda:
+            x = x.cuda()
+
+        y_pred = self.compute(x)
+
+        if self.padding > 0:
+            y_pred = torch.cat([y_pred,
+                                torch.zeros(x.shape[0], self.padding, device='cuda' if self.is_cuda else 'cpu')], dim=1)
+
+        return y_pred
+
+
+class JointDiffSigmoidMembershipV2(JointMembershipOptimized):
     def required_dtype(self):
         return torch.float64
 
@@ -69,7 +91,7 @@ class JointDiffSigmoidMembershipV2(JointMembership):
             ("Right Edge", output[:, 4])
         )
 
-    def forward(self, x):
+    def compute(self, x):
         slope = torch.abs(self.slope - self.slope_constraint) + self.slope_constraint
         ms = self.width_constraint / slope
 
@@ -96,7 +118,7 @@ class JointDiffSigmoidMembershipV2(JointMembership):
         return torch.cat([left_edge, left, center, right, right_edge], dim=1)
 
 
-class JointTrapMembershipV2(JointMembership):
+class JointTrapMembershipV2(JointMembershipOptimized):
     def required_dtype(self):
         return torch.float
 
@@ -151,7 +173,7 @@ class JointTrapMembershipV2(JointMembership):
             ("Right Edge", output[:, 4])
         )
 
-    def forward(self, x):
+    def compute(self, x):
         # IMPLEMENT TECHNIQUE SO THAT THE OUTPUT MATRIX IS FIST ALL ZEROS.
         # When the area is 1, for the other membership functions it is 0
 
@@ -236,7 +258,7 @@ class JointTrapMembershipV2(JointMembership):
         return torch.cat([left_edge, left, center, right, right_edge], dim=1)
 
 
-class JointSingleConstrainedEdgeMembership(JointMembership):
+class JointSingleConstrainedEdgeMembership(JointMembershipOptimized):
     def required_dtype(self):
         return torch.float
 
@@ -278,7 +300,7 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
             ("Far", output[:, 1]),
         )
 
-    def forward(self, x):
+    def compute(self, x):
         slope = torch.abs(self.slope - self.slope_constraint) + self.slope_constraint
         center = torch.abs(self.center)
 
@@ -300,7 +322,7 @@ class JointSingleConstrainedEdgeMembership(JointMembership):
         return torch.cat([left, right], dim=1)
 
 
-class Joint7TrapMembership(JointMembership):
+class Joint7TrapMembership(JointMembershipOptimized):
     def required_dtype(self):
         return torch.float
 
@@ -361,7 +383,7 @@ class Joint7TrapMembership(JointMembership):
             ("Right Edge", output[:, 6])
         )
 
-    def forward(self, x):
+    def compute(self, x):
         # IMPLEMENT TECHNIQUE SO THAT THE OUTPUT MATRIX IS FIST ALL ZEROS.
         # When the area is 1, for the other membership functions it is 0
 

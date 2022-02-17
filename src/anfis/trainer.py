@@ -123,7 +123,7 @@ def train_anfis_with(model, data, optimizer, criterion,
         # Print some progress information as the net is trained:
 
         if save_on_lowest_loss:
-            if (min_loss is None or min_loss > mse):
+            if min_loss is None or min_loss > mse:
                 min_loss = mse
                 save_epoch = t
                 new_model = model.state_dict()
@@ -213,8 +213,8 @@ def load_anfis(model, file):
 
 
 def make_joint_anfis(variable_joint_fuzzy_definitons, outputs, rules_type=ConsequentLayerType.PLAIN, mamdani_defs=None,
-                     mamdani_ruleset=None):
+                     mamdani_ruleset=None, velocity=False):
     model = JointAnfisNet('Simple joint classifier', variable_joint_fuzzy_definitons, outputs, rules_type=rules_type,
-                          mamdani_defs=mamdani_defs, mamdani_ruleset=mamdani_ruleset)
+                          mamdani_defs=mamdani_defs, mamdani_ruleset=mamdani_ruleset, velocity=velocity)
 
     return model

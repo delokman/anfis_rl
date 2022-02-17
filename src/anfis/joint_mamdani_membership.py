@@ -19,6 +19,10 @@ class JointMamdaniMembership(torch.nn.Module, ABC):
     def release_cache(self):
         pass
 
+    @abstractmethod
+    def to_cuda(self):
+        pass
+
 
 class JointSymmetricTriangleMembership(JointMamdaniMembership):
 
@@ -49,6 +53,9 @@ class JointSymmetricTriangleMembership(JointMamdaniMembership):
 
     def get_hard(self, direction=1):
         return self.center + direction * (self.abs_cache['soft'] + self.abs_cache['normal'] + self.abs_cache['hard'])
+
+    def to_cuda(self):
+        self.center = self.center.to(device='cuda')
 
     def __init__(self, center, soft, normal, hard, constant_center=True, dtype=torch.float) -> None:
         super().__init__()
@@ -123,6 +130,9 @@ class JointSymmetric9TriangleMembership(JointMamdaniMembership):
                 self.abs_cache['soft'] + self.abs_cache['normal'] + self.abs_cache['hard'] +
                 self.abs_cache['very_hard'])
 
+    def to_cuda(self):
+        self.center = self.center.to(device='cuda')
+
     def __init__(self, center, soft, normal, hard, very_hard, constant_center=True, dtype=torch.float) -> None:
         super().__init__()
 
@@ -160,6 +170,65 @@ class JointSymmetric9TriangleMembership(JointMamdaniMembership):
             6: 'Right',
             7: 'Hard Right',
             8: 'Very Hard Right',
+        }
+
+        self.cache_output_values = dict()
+
+
+class JointSymmetric3TriangleMembership(JointMamdaniMembership):
+
+    def __getitem__(self, item):
+        return self.cache_output_values[item]
+
+    def cache(self):
+        # self.abs_cache['slow'] = torch.abs(self.slow)
+        # self.abs_cache['medium'] = torch.abs(self.medium)
+        # self.abs_cache['fast'] = torch.abs(self.fast)
+
+        self.abs_cache['slow'] = self.slow
+        self.abs_cache['medium'] = self.medium
+        self.abs_cache['fast'] = self.fast
+
+        for key, val in self.output_function.items():
+            self.cache_output_values[key] = val()
+
+    def release_cache(self):
+        self.abs_cache.clear()
+        self.cache_output_values.clear()
+
+    def get_slow(self):
+        return self.abs_cache['slow']
+
+    def get_medium(self):
+        # return self.get_slow() + self.abs_cache['medium']
+        return self.abs_cache['medium']
+
+    def get_fast(self):
+        # return self.get_medium() + self.abs_cache['fast']
+        return self.abs_cache['fast']
+
+    def to_cuda(self):
+        pass
+
+    def __init__(self, slow, medium, fast, dtype=torch.float) -> None:
+        super().__init__()
+
+        self.register_parameter('slow', _mk_param(slow, dtype=dtype))
+        self.register_parameter('medium', _mk_param(medium, dtype=dtype))
+        self.register_parameter('fast', _mk_param(fast, dtype=dtype))
+
+        self.abs_cache = dict()
+
+        self.output_function = {
+            0: self.get_slow,
+            1: self.get_medium,
+            2: self.get_fast,
+        }
+
+        self.names = {
+            0: 'Slow',
+            1: 'Medium',
+            2: 'Fast',
         }
 
         self.cache_output_values = dict()

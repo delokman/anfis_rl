@@ -1,5 +1,3 @@
-from typing import Optional
-
 import rospy
 from sensor_msgs.msg import Joy
 from std_msgs.msg import Bool

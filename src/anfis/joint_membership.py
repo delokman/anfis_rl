@@ -119,14 +119,14 @@ class JointExprMembFunc(torch.nn.Module):
         return 'ExprMembFunc {} {} {} {}'.format(self.a, self.c1, self.c2, self.c3)
 
 
-class JointMembership(torch.nn.Module):
-
+class JointMembership(ABC, torch.nn.Module):
     def required_dtype(self):
         return torch.float
 
     def __init__(self):
         super().__init__()
         self.padding = 0
+        self.is_cuda = False
 
     @property
     def num_mfs(self):
@@ -153,7 +153,7 @@ class JointMembership(torch.nn.Module):
         """
         for mfname, mfdef in self.mfdefs.items():
             yvals = mfdef(x)
-            yield (mfname, yvals)
+            yield mfname, yvals
 
     def forward(self, x):
         """

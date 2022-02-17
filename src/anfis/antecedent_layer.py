@@ -212,21 +212,33 @@ class MamdaniAntecedentLayer(torch.nn.Module):
         # AND operation
         return torch.min(weights, dim=2)[0]
 
-
+#this functions established the rule-base of the fuzzy
 def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     """
+    controller input variables = Fuzzy Relations Control Variables (FRCVs):
     0 dist target
     1 dist line
     2 theta lookahead
     3 theta far
     4 theta near
     :return:
+
+    each tuple says which inputs are used for a rule with matching index i
+    ie (0, 1, 3), -> (dist target, dist line, theta far) for rules 5-10.
     """
-
+    # FIXME for rules with uneven indices number i.e sometimes 2 or sometimes 3, pad the lesser ones with duplicates
     variable_rule_index = [
-        (0, 2),
-        (0, 2),
-        (0, 2),
+        (0, 2, 0),
+        (0, 2, 0),
+        (0, 2, 0),
+        (0, 2, 0),
+        (0, 2, 0),
+
+        (0, 1, 3),
+        (0, 1, 3),
+        (0, 1, 3),
+        (0, 1, 3),
+        (0, 1, 3),
 
         (0, 1, 3),
         (0, 1, 3),
@@ -240,19 +252,6 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (0, 1, 4),
         (0, 1, 4),
 
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-        (0, 1, 4),
-
-        # Other side
         (0, 1, 4),
         (0, 1, 4),
         (0, 1, 4),
@@ -265,15 +264,17 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (0, 1, 4),
         (0, 1, 4),
 
-        (0, 1, 3),
-        (0, 1, 3),
-        (0, 1, 3),
-        (0, 1, 3),
-        (0, 1, 3),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
 
-        (0, 2),
-        (0, 2),
-        (0, 2),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
+        (0, 1, 4),
     ]
 
     '''
@@ -293,17 +294,27 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     3 = close right
     3 = near right
     4 = far right
+    
+    each FRCV in each tuple in the variable_rule_index is assigned an associated linguistic variables
     '''
     membership_indices = [
-        (0, 0),  # 1
-        (0, 1),  # 2
-        (0, 2),  # 3
+        (0, 0, 0),  # 1
+        (0, 1, 0),  # 2
+        (0, 2, 0),  # 3
+        (0, 3, 0),  # 3
+        (0, 4, 0),  # 3
 
         (1, 0, 0),  # 3
         (1, 0, 1),  # 3
         (1, 0, 2),  # 3
         (1, 0, 3),  # 3
         (1, 0, 4),  # 3
+
+        (1, 6, 0),  # 3
+        (1, 6, 1),  # 3
+        (1, 6, 2),  # 3
+        (1, 6, 3),  # 3
+        (1, 6, 4),  # 3
 
         (1, 1, 0),  # 3
         (1, 1, 1),  # 3
@@ -323,8 +334,6 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (1, 3, 3),  # 3
         (1, 3, 4),  # 3
 
-        # OTHER SIDE
-
         (1, 4, 0),  # 3
         (1, 4, 1),  # 3
         (1, 4, 2),  # 3
@@ -334,18 +343,8 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         (1, 5, 0),  # 3
         (1, 5, 1),  # 3
         (1, 5, 2),  # 3
-        (1, 5, 3),  # 3
-        (1, 5, 4),  # 3
-
-        (1, 6, 0),  # 3
-        (1, 6, 1),  # 3
-        (1, 6, 2),  # 3
-        (1, 6, 3),  # 3
-        (1, 6, 4),  # 3
-
-        (0, 2),
-        (0, 3),
-        (0, 4),
+        (1, 5, 3),
+        (1, 5, 4),
     ]
 
     '''
@@ -356,52 +355,56 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     4 = close right
     5 = right
     6 = far right
+    
+    each rule of index i is assigned an associated angular velocity linguistic variable 
     '''
     outputs_membership = [
         (8,),  # 1
         (6,),  # 1
         (4,),  # 1
-        (8,),  # 1
-        (5,),  # 1
-        (4,),  # 1
-        (3,),  # 1
+        (2,),  # 1
         (0,),  # 1
 
         (8,),  # 1
-        (7,),  # 2
-        (6,),  # 3
+        (5,),  # 1
+        (4,),  # 13
+        (3,),  # 0
+        (0,),  # 8
+
+        (8,),  # 5
         (5,),  # 4
-        (2,),  # 5
-        (8,),  # 6
-        (6,),  # 7
-        (5,),  # 8
+        (4,),  # 3
+        (3,),  # 0
+        (0,),  #
+
+        (8,),  # 8
+        (7,),  # 9
+        (6,),  # 10
+        (5,),  # 11
+        (2,),  # 12
+
+        (8,),  # 13
+        (6,),  # 14
+        (5,),  # 15
+        (4,),  # 1
+        (1,),  # 2
+
+        (7,),  # 3
+        (5,),  # 4
+        (4,),  # 5
+        (3,),  # 6
+        (1,),  # 7
+
+        (7,),  # 8
         (4,),  # 9
-        (1,),  # 10
-        (7,),  # 11
-        (5,),  # 12
-        (4,),  # 13
-        (3,),  # 14
-        (1,),  # 15
+        (3,),  # 10
+        (2,),  # 11
+        (0,),  # 12
 
-        # OTHER SIDE
-
-        (7,),  # 1
-        (4,),  # 2
-        (3,),  # 3
-        (2,),  # 4
-        (0,),  # 5
-        (6,),  # 6
-        (3,),  # 7
-        (2,),  # 8
-        (1,),  # 9
-        (0,),  # 10
-        (8,),  # 11
-        (5,),  # 12
-        (4,),  # 13
+        (6,),  # 13
         (3,),  # 14
-        (0,),  # 15
-        (4,),  # 15
         (2,),  # 15
+        (1,),  # 15
         (0,),  # 15
     ]
 
@@ -410,6 +413,34 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
         'membership_indices': membership_indices,
         'outputs_membership': outputs_membership
     }
+
+    return mamdani_ruleset
+
+#each rule of index i is assigned an associated linear velocity linguistic variable based on the angular velocity lingistic variable
+def dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel():
+    mamdani_ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near()
+
+    '''
+    0 = slow
+    1 = medium
+    2 = fast
+    '''
+
+    output = []
+
+    for i in mamdani_ruleset['outputs_membership']:
+        x = abs(i[0] - 4)
+
+        if x <= 1:
+            o = 2
+        elif x <= 3:
+            o = 1
+        else:
+            o = 0
+
+        output.append((o,))
+
+    mamdani_ruleset['outputs_membership_velocity'] = output
 
     return mamdani_ruleset
 

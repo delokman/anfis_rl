@@ -17,6 +17,14 @@ from anfis.joint_membership import JointMembership
 dtype = torch.float
 
 
+class EmptyGrad:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 def plotErrors(errors):
     """
         Plot the given list of error rates against no. of epochs
@@ -69,7 +77,7 @@ def calc_error(y_pred, y_actual):
         ss_regression = torch.sum((y_actual - y_pred) ** 2)
         rsq = (1 - (ss_regression / ss_total)) * 100
 
-    return (tot_loss, rmse, perc_loss, rsq)
+    return tot_loss, rmse, perc_loss, rsq
 
 
 def test_anfis(model, data, show_plots=False):
@@ -97,6 +105,10 @@ def plot_fuzzy_variables(summary, model, epoch):
         for name, value in model.layer['consequent'].mamdani_defs.named_parameters():
             summary.add_scalar(f"Consequent/{name}", value, epoch)
 
+        if model.velocity:
+            for name, value in model.layer['consequent'].mamdani_defs_vel.named_parameters():
+                summary.add_scalar(f"Consequent/Vel {name}", value, epoch)
+
 
 def plot_fuzzy_consequent(summary, model, t):
     with torch.no_grad():
@@ -117,6 +129,22 @@ def plot_fuzzy_consequent(summary, model, t):
 
             summary.add_figure("Consequent/Mamdani", fig, t)
 
+            if model.velocity:
+                consque = model.layer['consequent'].mamdani_defs_vel
+                consque.cache()
+
+                values = consque.cache_output_values
+
+                fig, ax = plt.subplots()
+
+                s = 1
+
+                for key, value in values.items():
+                    ax.plot([value - 1 / s, value, value + 1 / s], [0, 1, 0], label=consque.names[key])
+
+                ax.legend()
+
+                summary.add_figure("Consequent/Velocity Mamdani", fig, t)
         else:
             coeff = model.layer['consequent'].coeff
             coeff, bias = coeff[:, :, :-1], coeff[:, :, -1]
@@ -198,4 +226,6 @@ def plot_critic_weights(summary, model, epoch):
 
     for name, layer in critic.named_parameters():
         name = name.replace(".", "/")
-        summary.add_histogram(name, layer, global_step=epoch)
+
+        if layer.nelement() != 0:
+            summary.add_histogram(name, layer, global_step=epoch)

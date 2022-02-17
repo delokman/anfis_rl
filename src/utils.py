@@ -40,8 +40,25 @@ def markdown_rule_table(anfis):
 
     out_name = anfis.layer['consequent'].mamdani_defs.names
 
-    rules = ['| Rule ID | Membership 1 | Membership 2| Output |',
-             '| --------| ------------ | ----------- | ------ | ']
+    uses_vel = anfis.velocity
+
+    num_variable = [i + 1 for i in range(len(var_index[0]))]
+
+    title = "| Rule ID | " + " | ".join([f"Membership {i}" for i in num_variable]) + " | Turning Output |"
+    separator = "| -------- | " + "|".join([f"------" for _ in num_variable]) + " | ------ |"
+
+    if uses_vel:
+        out_name_vel = anfis.layer['consequent'].mamdani_defs_vel.names
+        out_index_vel = rules['outputs_membership_velocity']
+
+        title += " Velocity Output |"
+        separator += '------ |'
+    else:
+        out_name_vel = None
+        out_index_vel = None
+
+    rules = [title,
+             separator]
 
     for i in range(len(var_index)):
         temp = []
@@ -51,6 +68,10 @@ def markdown_rule_table(anfis):
 
             temp.append(f"{name} is {list(vardefs[name].mfdefs.keys())[mem]}")
 
-        rules.append(f'| {i} | {" | ".join(temp)}|  {out_name[out_index[i][0]]} |')
+        if uses_vel:
+            out = f"{out_name[out_index[i][0]]} | {out_name_vel[out_index_vel[i][0]]}"
+        else:
+            out = out_name[out_index[i][0]]
+        rules.append(f'| {i} | {" | ".join(temp)}|  {out} |')
 
     return '\n'.join(rules)

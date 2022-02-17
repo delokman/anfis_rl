@@ -67,8 +67,9 @@ class JointAnfisNet(torch.nn.Module):
 
     def __init__(self, description, invardefs, outvarnames, rules_type=ConsequentLayerType.HYBRID,
                  mamdani_ruleset=None,
-                 mamdani_defs=None):
+                 mamdani_defs=None, velocity=False):
         super(JointAnfisNet, self).__init__()
+        self.velocity = velocity
         self.description = description
         self.outvarnames = outvarnames
         self.rules_type = rules_type
@@ -88,7 +89,8 @@ class JointAnfisNet(torch.nn.Module):
 
             rules = MamdaniAntecedentLayer(mamdani_ruleset)
             normalization = Normalization()
-            cl = MamdaniConsequentLayer(mamdani_defs, rules.mamdani_ruleset['outputs_membership'])
+            cl = MamdaniConsequentLayer(mamdani_defs, rules.mamdani_ruleset, velocity=velocity)
+
             output = ProductSum()
         else:
             rules = AntecedentLayer(mfdefs)
@@ -102,6 +104,12 @@ class JointAnfisNet(torch.nn.Module):
             else:
                 cl = PlainConsequentLayer(self.num_in, self.num_rules, self.num_out, self.dtype)
 
+        self.fuzzified = None
+        self.raw_weights = None
+        self.weights = None
+        self.rule_tsk = None
+        self.y_pred = None
+
         self.layer = torch.nn.ModuleDict(OrderedDict([
             ('fuzzify', JointFuzzifyLayer(mfdefs, varnames)),
             ('rules', rules),
@@ -110,6 +118,15 @@ class JointAnfisNet(torch.nn.Module):
             ('output', output),
             # weighted-sum layer is just implemented as a function.
         ]))
+
+        self.is_cuda = False
+
+    def cuda_memberships(self):
+        for i in self.layer['fuzzify'].varmfs.values():
+            i.is_cuda = True
+
+    def cuda_mamdani(self):
+        self.layer['consequent'].mamdani_defs.to_cuda()
 
     @property
     def num_out(self):
@@ -122,6 +139,12 @@ class JointAnfisNet(torch.nn.Module):
     @coeff.setter
     def coeff(self, new_coeff):
         self.layer['consequent'].coeff = new_coeff
+
+    def cuda(self, device=None):
+        super(JointAnfisNet, self).cuda(device)
+        self.cuda_memberships()
+        self.cuda_mamdani()
+        self.is_cuda = True
 
     def fit_coeff(self, *params):
         """
@@ -172,6 +195,13 @@ class JointAnfisNet(torch.nn.Module):
 
             out_name = self.layer['consequent'].mamdani_defs.names
 
+            if self.velocity:
+                out_name_vel = self.layer['consequent'].mamdani_defs_vel.names
+                out_index_vel = rules['outputs_membership_velocity']
+            else:
+                out_name_vel = None
+                out_index_vel = None
+
             rules = []
             for i in range(len(var_index)):
                 temp = []
@@ -181,7 +211,11 @@ class JointAnfisNet(torch.nn.Module):
 
                     temp.append(f"{name} is {list(vardefs[name].mfdefs.keys())[mem]}")
 
-                rules.append(f'Rule {i}: IF {" AND ".join(temp)} THEN {out_name[out_index[i][0]]}')
+                if self.velocity:
+                    out = f"{out_name[out_index[i][0]]} AND {out_name_vel[out_index_vel[i][0]]}"
+                else:
+                    out = out_name[out_index[i][0]]
+                rules.append(f'Rule {i}: IF {" AND ".join(temp)} THEN {out}')
             return '\n'.join(rules)
         else:
             rstr = []
@@ -198,6 +232,9 @@ class JointAnfisNet(torch.nn.Module):
             I save the outputs from each layer to an instance variable,
             as this might be useful for comprehension/debugging.
         """
+        if self.is_cuda and not x.is_cuda:
+            x.cuda()
+
         self.fuzzified = self.layer['fuzzify'](x)
         self.raw_weights = self.layer['rules'](self.fuzzified)
         self.weights = self.layer['normalize'](self.raw_weights)
