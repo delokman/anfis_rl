@@ -117,11 +117,13 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
 
     dist_error_mae = np.mean(np.abs(distance_errors))
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
-    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme)
+    avg_velocity = np.mean(velocities)
+    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
 
     summary.add_figure("Path/Plot", fig, global_step=epoch)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
+    summary.add_scalar("Error/Average Velocity", avg_velocity, global_step=epoch)
     plot_anfis_data(summary, epoch, agent)
 
     x = np.arange(0, len(distance_errors))

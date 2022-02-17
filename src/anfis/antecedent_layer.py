@@ -212,20 +212,25 @@ class MamdaniAntecedentLayer(torch.nn.Module):
         # AND operation
         return torch.min(weights, dim=2)[0]
 
-#this functions established the rule-base of the fuzzy
+
 def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
     """
+     functions established the rule-base of the fuzzy
+    :return:
+    """
+
+    '''
     controller input variables = Fuzzy Relations Control Variables (FRCVs):
+    
     0 dist target
     1 dist line
     2 theta lookahead
     3 theta far
     4 theta near
-    :return:
-
-    each tuple says which inputs are used for a rule with matching index i
+    
+    each tuple says which FRCVs are used for a rule with matching index i
     ie (0, 1, 3), -> (dist target, dist line, theta far) for rules 5-10.
-    """
+    '''
     # FIXME for rules with uneven indices number i.e sometimes 2 or sometimes 3, pad the lesser ones with duplicates
     variable_rule_index = [
         (0, 2, 0),
@@ -416,8 +421,11 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
 
     return mamdani_ruleset
 
-#each rule of index i is assigned an associated linear velocity linguistic variable based on the angular velocity lingistic variable
+
 def dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel():
+    """
+    each rule of index i is assigned an associated linear velocity linguistic variable based on the angular velocity lingistic variable
+    """
     mamdani_ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near()
 
     '''
