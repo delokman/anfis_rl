@@ -235,6 +235,10 @@ class JointAnfisNet(torch.nn.Module):
         if self.is_cuda and not x.is_cuda:
             x.cuda()
 
+        # with torch.no_grad:
+        #     self.fuzzified = self.layer['fuzzify'](x)
+        #     self.raw_weights = self.layer['rules'](self.fuzzified)
+        #     self.weights = self.layer['normalize'](self.raw_weights)
         self.fuzzified = self.layer['fuzzify'](x)
         self.raw_weights = self.layer['rules'](self.fuzzified)
         self.weights = self.layer['normalize'](self.raw_weights)

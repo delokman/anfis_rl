@@ -61,24 +61,24 @@ def scaled_sigmoid(state, c1, c2=np.pi, c3=2, c4=-0.5):
 
 
 def reward(errors, linear_vel, angular_vel, params):
-    scale = params['reward_scale']
-    DE_penalty_gain = params['DE_penalty_gain']
-    DE_penalty_shape = params['DE_penalty_shape']
-    HE_penalty_gain = params['HE_penalty_gain']
-    HE_penalty_shape = params['HE_penalty_shape']
-    HE_iwrt_DE = params['HE_iwrt_DE']
+    # scale = params['reward_scale']
+    # DE_penalty_gain = params['DE_penalty_gain']
     vel_reward_gain = params['vel_reward_gain']
-    vel_iwrt_DE = params['vel_iwrt_DE']
-    steering_penalty_gain = params['steering_penalty_gain']
-    steering_iwrt_DE = params['steering_iwrt_DE']
-    dis_scale = params['dis_scale']
-    sigmoid_near = params['sigmoid_near']
-    scale_near = params['scale_near']
-    sigmoid_recovery = params['sigmoid_recovery']
-    scale_recovery = params['scale_recovery']
-    exp_lookahead = params['exp_lookahead']
-    scale_lookahead = params['scale_lookahead']
-    max_angular_vel = params['max_angular_vel']
+    # DE_penalty_shape = params['DE_penalty_shape']
+    # HE_penalty_gain = params['HE_penalty_gain']
+    # HE_penalty_shape = params['HE_penalty_shape']
+    # HE_iwrt_DE = params['HE_iwrt_DE']
+    # vel_iwrt_DE = params['vel_iwrt_DE']
+    # steering_penalty_gain = params['steering_penalty_gain']
+    # steering_iwrt_DE = params['steering_iwrt_DE']
+    # dis_scale = params['dis_scale']
+    # sigmoid_near = params['sigmoid_near']
+    # scale_near = params['scale_near']
+    # sigmoid_recovery = params['sigmoid_recovery']
+    # scale_recovery = params['scale_recovery']
+    # exp_lookahead = params['exp_lookahead']
+    # scale_lookahead = params['scale_lookahead']
+    # max_angular_vel = params['max_angular_vel']
 
     if errors.shape[0] == 5:
         # theta recovery = theta far
@@ -88,33 +88,43 @@ def reward(errors, linear_vel, angular_vel, params):
         target = 0
         theta_lookahead = 0
 
-    scaled_dis = scaled_input(dis, dis_scale)
-    dis = -DE_penalty_gain * (math.pow(scaled_dis, DE_penalty_shape) + scaled_dis)
+    # scaled_dis = scaled_input(dis, dis_scale)
+    # dis = -DE_penalty_gain * (math.pow(scaled_dis, DE_penalty_shape) + scaled_dis)
+    # dis = -DE_penalty_gain * np.abs(dis)
+    # dis = 1 / (np.abs(dis) + DE_penalty_gain)
+    theta_near = scaled_input(theta_near)
+    dis = (1 / (theta_near + 0.2)) * math.exp(-np.abs(dis))
+    #dis = linear_vel * math.exp(-np.abs(dis))
 
-    scaled_theta_near = scaled_sigmoid(theta_near, sigmoid_near)
-    theta_n = math.pow(scaled_theta_near, HE_penalty_shape)
-    theta_near = sub_reward(theta_n, scale_near, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
+    # scaled_theta_near = scaled_sigmoid(theta_near, sigmoid_near)
+    # theta_n = math.pow(scaled_theta_near, HE_penalty_shape)
+    # theta_near = sub_reward(theta_n, scale_near, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
 
-    scaled_theta_recovery = scaled_sigmoid(theta_recovery, sigmoid_recovery)
-    theta_r = math.pow(scaled_theta_recovery, HE_penalty_shape)
-    theta_recovery = sub_reward(theta_r, scale_recovery, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
+    # scaled_theta_recovery = scaled_sigmoid(theta_recovery, sigmoid_recovery)
+    # theta_r = math.pow(scaled_theta_recovery, HE_penalty_shape)
+    # theta_recovery = sub_reward(theta_r, scale_recovery, HE_penalty_gain, 1, scaled_dis, HE_iwrt_DE)
 
-    scaled_theta_lh = scaled_input(theta_lookahead)
-    max_turn_r = np.abs(linear_vel) / max_angular_vel  # linear vel / max turn velocity
-    theta_lookahead = scale_lookahead * scaled_theta_lh * np.exp(-exp_lookahead * max_turn_r * target)
+    # scaled_theta_lh = scaled_input(theta_lookahead)
+    # max_turn_r = np.abs(linear_vel) / max_angular_vel  # linear vel / max turn velocity
+    # theta_lookahead = scale_lookahead * scaled_theta_lh * np.exp(-exp_lookahead * max_turn_r * target)
 
-    # vel_iwrt_DE = vel_iwrt_DE * 10
-    vel_iwrt_DE = vel_iwrt_DE
+    # # vel_iwrt_DE = vel_iwrt_DE * 10
+    # vel_iwrt_DE = vel_iwrt_DE
 
-    linear_vel = sub_reward(linear_vel, 1, vel_reward_gain, 0, scaled_dis, vel_iwrt_DE) #+ \
-                 #linear_vel ** 2 * np.log((target + 1)) * .5 / 1.5  # / np.exp(linear_vel * vel_iwrt_DE)
-    # linear_vel * np.log((target + 1) ** 5.6) * .5 / np.exp(linear_vel * vel_iwrt_DE)
+    # linear_vel = sub_reward(linear_vel, 1, vel_reward_gain, 0, scaled_dis, vel_iwrt_DE) #+ \
+    #              #linear_vel ** 2 * np.log((target + 1)) * .5 / 1.5  # / np.exp(linear_vel * vel_iwrt_DE)
+    # # linear_vel * np.log((target + 1) ** 5.6) * .5 / np.exp(linear_vel * vel_iwrt_DE)
+    #linear_vel *= vel_reward_gain
 
-    abs_angular_vel = np.abs(angular_vel)
-    angular_vel = sub_reward(abs_angular_vel, 1, steering_penalty_gain, 0, scaled_dis,
-                             steering_iwrt_DE) / 1.5
-    angular_vel = 0
+    # abs_angular_vel = np.abs(angular_vel)
+    # angular_vel = sub_reward(abs_angular_vel, 1, steering_penalty_gain, 0, scaled_dis,
+    #                          steering_iwrt_DE) / 1.5
+    # angular_vel = 0
 
-    rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel + theta_lookahead) / scale
-    return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,
-                     theta_lookahead / scale]
+    # rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel + theta_lookahead) / scale
+    # return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,
+    #                  theta_lookahead / scale]
+
+    # rewards = dis
+    return dis, [dis, theta_near, theta_recovery, linear_vel, angular_vel,
+                        theta_lookahead]

@@ -40,6 +40,7 @@ import rospkg
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
+epoch_number = 1
 
 
 def call_service(service_name, service_type, data):
@@ -391,7 +392,7 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
-    for i in range(4):
+    for i in range(epoch_number):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
         # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
@@ -452,10 +453,10 @@ if __name__ == '__main__':
             noise = None
 
         params = {
-            'linear_vel': 1.5,
+            'linear_vel': 2,
             'batch_size': 32,
             'update_rate': 5,
-            'epoch_nums': 100,
+            'epoch_nums': 50,
             'control_mul': 1. if is_simulation else 1.,
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
@@ -464,24 +465,24 @@ if __name__ == '__main__':
         }
 
         reward_scales = {
-            'reward_scale': 15.,
-            'DE_penalty_gain': 25 / 1.5,
-            'DE_penalty_shape': 1,
-            'HE_penalty_gain': 25 * 2,
-            'HE_penalty_shape': 3,
-            'HE_iwrt_DE': 2,
-            'vel_reward_gain': 2,
-            'vel_iwrt_DE': 1,
-            'steering_penalty_gain': 4,
-            'steering_iwrt_DE': 4,
-            'dis_scale': 1,
-            'sigmoid_near': 25,
-            'scale_near': -15 / 100,
-            'sigmoid_recovery': 4.5,
-            'scale_recovery': -1.5 / 12,
-            'exp_lookahead': 1,
-            'scale_lookahead': -100 / 2 / 1.5,
-            'max_angular_vel': 4,
+            #'reward_scale': 1,
+            #'DE_penalty_gain': 0.25,
+            'vel_reward_gain': 0.25,
+            # 'DE_penalty_shape': 1,
+            # 'HE_penalty_gain': 25 * 2,
+            # 'HE_penalty_shape': 3,
+            # 'HE_iwrt_DE': 2,
+            # 'vel_iwrt_DE': 1,
+            # 'steering_penalty_gain': 4,
+            # 'steering_iwrt_DE': 4,
+            # 'dis_scale': 1,
+            # 'sigmoid_near': 25,
+            # 'scale_near': -15 / 100,
+            # 'sigmoid_recovery': 4.5,
+            # 'scale_recovery': -1.5 / 12,
+            # 'exp_lookahead': 1,
+            # 'scale_lookahead': -100 / 2 / 1.5,
+            # 'max_angular_vel': 4,
         }
 
         params.update(reward_scales)
