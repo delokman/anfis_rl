@@ -17,7 +17,7 @@ from anfis.joint_membership import JointMembership
 dtype = torch.float
 
 
-class EmptyGrad:
+class DoNothing:
     def __enter__(self):
         pass
 

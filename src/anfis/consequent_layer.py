@@ -4,6 +4,8 @@ import numpy as np
 import torch
 from torch.linalg import lstsq
 
+from anfis.utils import DoNothing
+
 dtype = torch.float
 
 
@@ -315,8 +317,12 @@ class MamdaniConsequentLayer(torch.nn.Module):
             self.mamdani_defs_vel = None
             self.output_membership_mapping_vel = None
 
+        self.train_angular_velocity = True
+        self.train_linear_velocity = True
+
     def forward(self, x):
-        self.mamdani_defs.cache()
+        with DoNothing() if self.train_angular_velocity else torch.no_grad():
+            self.mamdani_defs.cache()
 
         # FIXME make it work for multiple outputs
         # output = list(self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping)
@@ -339,7 +345,8 @@ class MamdaniConsequentLayer(torch.nn.Module):
         #         for membership_id in self.output_membership_mapping))
 
         if self.velocity:
-            self.mamdani_defs_vel.cache()
+            with DoNothing() if self.train_linear_velocity else torch.no_grad():
+                self.mamdani_defs_vel.cache()
 
             yaw = torch.stack([self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping])
             vel = torch.stack([self.mamdani_defs_vel[membership_id_vel[0]] for membership_id_vel in
