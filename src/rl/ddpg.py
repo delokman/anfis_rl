@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import optim
+from torch.utils.tensorboard import SummaryWriter
 
 from anfis.utils import save_fuzzy_membership_functions
 from rl.citic import Critic
@@ -96,6 +97,8 @@ class DDPGAgent(torch.nn.Module):
         self.ordered_dict['critic'] = self.critic
         self.ordered_dict['critic_target'] = self.critic_target
 
+        self.summary_index = 0
+
     def save_checkpoint(self, location):
         state_dicts = {
             'actor': self.state_dict(),
@@ -139,7 +142,7 @@ class DDPGAgent(torch.nn.Module):
         else:
             return action[0, 0]
 
-    def update(self, batch_size):
+    def update(self, batch_size, summary: SummaryWriter = None):
         if self.priority:
             states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size)
         else:
@@ -189,10 +192,18 @@ class DDPGAgent(torch.nn.Module):
         self.soft_update(self.actor_target, self.actor)
         self.soft_update(self.critic_target, self.critic)
 
+        with torch.no_grad():
+            TD_error = Qprime - Qvals
         if self.priority:
-            TD_error = torch.abs(Qprime - Qvals) + 1e-6
-
             self.memory.update_priorities(batch_idxes, TD_error)
+
+        if summary is not None:
+            summary.add_scalar("Update/Actor Loss", policy_loss, global_step=self.summary_index)
+            summary.add_scalar("Update/Critic Loss", critic_loss, global_step=self.summary_index)
+            # summary.add_scalar("Update/Velocity Regularization", vel_average, global_step=self.summary_index)
+            summary.add_scalar("Update/TD Error", torch.mean(TD_error), global_step=self.summary_index)
+
+            self.summary_index += 1
 
     def soft_update(self, target, source):
         for target_param, param in zip(target.parameters(), source.parameters()):

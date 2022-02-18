@@ -66,9 +66,9 @@ def plot_anfis_data(summary, epoch, agent):
     plot_fuzzy_variables(summary, anfis, epoch)
 
 
-def agent_update(agent, batch_size, dis_error, rule_weights=None):
+def agent_update(agent, batch_size, dis_error, rule_weights=None, summary=None):
     if len(agent.memory) > batch_size:
-        agent.update(batch_size)
+        agent.update(batch_size, summary)
 
 
 def add_to_memory(new_state, rewards, control_law, agent, done):
@@ -158,7 +158,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig, ax = plt.subplots()
     ax.plot(x, rewards_cummulative)
     fig.tight_layout()
-    summary.add_figure("Graphs/Rewards", fig, global_step=epoch)
+    summary.add_figure("Reward/Rewards", fig, global_step=epoch)
 
     total = sum(rewards_cummulative)
     summary.add_scalar('Error/Total Reward', total, global_step=epoch)
@@ -167,7 +167,7 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     temp = ax.plot(x, reward_components)
     ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel', 'theta_lookahead'))
     fig.tight_layout()
-    summary.add_figure("Graphs/Rewards Components", fig, global_step=epoch)
+    summary.add_figure("Reward/Rewards Components", fig, global_step=epoch)
 
     checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
@@ -341,7 +341,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
             add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
             if update_step % params['update_rate'] == 0 and train:
-                agent_update(agent, params['batch_size'], dist_e, rule_weights)
+                agent_update(agent, params['batch_size'], dist_e, rule_weights, summary)
 
                 if show_gradients and len(agent.memory) > params['batch_size']:
                     for name, p in agent.actor.named_parameters():
