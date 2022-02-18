@@ -99,6 +99,43 @@ class DDPGAgent(torch.nn.Module):
 
         self.summary_index = 0
 
+        self._train_inputs = True
+        self._train_velocity = True
+        self._train_angular = True
+
+    @property
+    def train_inputs(self):
+        return self._train_inputs
+
+    @train_inputs.setter
+    def train_inputs(self, new_val):
+        self._train_inputs = new_val
+
+        self.actor.train_inputs = new_val
+        self.actor_target.train_inputs = new_val
+
+    @property
+    def train_velocity(self):
+        return self._train_velocity
+
+    @train_velocity.setter
+    def train_velocity(self, new_val):
+        self._train_velocity = new_val
+
+        self.actor.set_linear_vel_training(new_val)
+        self.actor_target.set_linear_vel_training(new_val)
+
+    @property
+    def train_angular(self):
+        return self._train_angular
+
+    @train_angular.setter
+    def train_angular(self, new_val):
+        self._train_angular = new_val
+
+        self.actor.set_angular_vel_training(new_val)
+        self.actor_target.set_angular_vel_training(new_val)
+
     def save_checkpoint(self, location):
         state_dicts = {
             'actor': self.state_dict(),

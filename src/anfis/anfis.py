@@ -18,6 +18,7 @@ from anfis.antecedent_layer import AntecedentLayer, MamdaniAntecedentLayer
 from anfis.consequent_layer import ConsequentLayer, SymmetricWeightsConsequentLayer, ConsequentLayerType, \
     PlainConsequentLayer, MamdaniConsequentLayer
 from anfis.fuzzy_layer import JointFuzzifyLayer
+from anfis.utils import DoNothing
 
 dtype = torch.float
 
@@ -109,6 +110,7 @@ class JointAnfisNet(torch.nn.Module):
         self.weights = None
         self.rule_tsk = None
         self.y_pred = None
+        self.train_inputs = True
 
         self.layer = torch.nn.ModuleDict(OrderedDict([
             ('fuzzify', JointFuzzifyLayer(mfdefs, varnames)),
@@ -239,14 +241,21 @@ class JointAnfisNet(torch.nn.Module):
         #     self.fuzzified = self.layer['fuzzify'](x)
         #     self.raw_weights = self.layer['rules'](self.fuzzified)
         #     self.weights = self.layer['normalize'](self.raw_weights)
-        self.fuzzified = self.layer['fuzzify'](x)
-        self.raw_weights = self.layer['rules'](self.fuzzified)
-        self.weights = self.layer['normalize'](self.raw_weights)
+        with DoNothing() if self.train_inputs else torch.no_grad():
+            self.fuzzified = self.layer['fuzzify'](x)
+            self.raw_weights = self.layer['rules'](self.fuzzified)
+            self.weights = self.layer['normalize'](self.raw_weights)
         self.rule_tsk = self.layer['consequent'](x)
         self.y_pred = self.layer['output'](self.weights, self.rule_tsk)
         # y_pred = torch.bmm(self.rule_tsk, self.weights.unsqueeze(2))
         # self.y_pred = y_pred.squeeze(2)
         return self.y_pred
+
+    def set_angular_vel_training(self, val):
+        self.layer['consequent'].train_angular_velocity = val
+
+    def set_linear_vel_training(self, val):
+        self.layer['consequent'].train_linear_velocity = val
 
 
 # These hooks are handy for debugging:
