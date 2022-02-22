@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.linalg import lstsq
 
-from anfis.utils import DoNothing
+from utils import DoNothing
 
 dtype = torch.float
 

@@ -75,3 +75,11 @@ def markdown_rule_table(anfis):
         rules.append(f'| {i} | {" | ".join(temp)}|  {out} |')
 
     return '\n'.join(rules)
+
+
+class DoNothing:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
