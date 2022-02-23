@@ -11,9 +11,10 @@ import matplotlib
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
+from new_test_courses import z_course
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
-from test_course import test_course, test_course3
+from test_course import test_course3, hard_course
 from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
@@ -82,7 +83,7 @@ def add_to_memory(new_state, rewards, control_law, agent, done):
 
 def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                         rewards_cummulative,
-                        checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights=None):
+                        checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights=None, train=True):
     plot_critic_weights(summary, agent, epoch)
 
     if rule_weights is not None and len(rule_weights) > 0:
@@ -170,23 +171,24 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     fig.tight_layout()
     summary.add_figure("Reward/Rewards Components", fig, global_step=epoch)
 
-    checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
+    if train:
+        checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
-    agent.save_checkpoint(checkpoint_loc)
+        agent.save_checkpoint(checkpoint_loc)
 
-    checkpoint.update(dist_error_mae, checkpoint_loc)
+        checkpoint.update(dist_error_mae, checkpoint_loc)
 
-    add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
+        add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
     return dist_error_mae
 
 
 def shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights):
+             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights, train):
     try:
         print("Shutting down by saving data epoch:", epoch)
         summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
                             rewards_cummulative, checkpoint, epoch, yaw_rates, velocities, reward_components,
-                            rule_weights)
+                            rule_weights, train)
         summary.close()
     except Exception:
         print("Error saving summary data on shutdown")
@@ -237,7 +239,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights))
+                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights, train))
 
     if noise is not None:
         noise.reset()
@@ -287,13 +289,15 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
                 if not params['simulation'] and dist_e > 4:
                     print("Reloading from save,", checkpoint.checkpoint_location)
-                    checkpoint.reload(agent)
+                    if train:
+                        checkpoint.reload(agent)
                     error = True
                     break
             else:
                 print("Error!!!", path_errors)
                 print("Reloading from save,", checkpoint.checkpoint_location)
-                checkpoint.reload(agent)
+                if train:
+                    checkpoint.reload(agent)
                 error = True
                 break
 
@@ -316,7 +320,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
             if not np.isfinite(control_law) or not np.isfinite(velocity):
                 print("Error for control law resetting", control_law, "velocity,", velocity)
                 print("Reloading from save,", checkpoint.checkpoint_location)
-                checkpoint.reload(agent)
+                if train:
+                    checkpoint.reload(agent)
                 error = True
                 break
 
@@ -368,7 +373,7 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
     dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
-                                         rule_weights)
+                                         rule_weights, train)
 
     return dist_error_mae, error
 
@@ -506,6 +511,13 @@ if __name__ == '__main__':
         error_threshold = 0.0075
 
         train = True
+        agent.train_inputs = False
+
+        validation_courses = {"Z Course": z_course(5, 15, 180, 15), "Hard 400": hard_course(400)}
+
+        for k, v in validation_courses.items():
+            extend_path(v)
+            validation_courses[k] = [v, SummaryWriter(f'{package_location}/runs/{name}/{k}')]
 
         for i in range(params['epoch_nums']):
             summary.add_scalar('model/learning', train, i)
@@ -532,6 +544,14 @@ if __name__ == '__main__':
                     scheduler1.step()
                     scheduler2.step()
                 # sys.exit()
+
+            if i % 10 == 0:
+                for k, v in validation_courses.items():
+                    agent.eval()
+                    path, val_summary = v
+                    epoch(i, agent, path, val_summary, checkpoint_saver, params, pauser, jackal, noise,
+                          train=False)
+                    agent.train()
 
             summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
             summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
