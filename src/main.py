@@ -535,6 +535,7 @@ if __name__ == '__main__':
 
             summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
             summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
+            summary.add_scalar("model/error", error_flag, i)
 
         summary.close()
 
