@@ -52,7 +52,9 @@ def curved_z(l, r, n=5):
     cx, cy = points[-1]
     cy -= r
 
-    for i in np.linspace(np.pi / 2, -np.pi / 2, num=n):
+    dx = np.pi / n
+
+    for i in np.linspace(np.pi / 2 - dx, -np.pi / 2, num=n):
         points.append([cx + r * np.cos(i), cy + r * np.sin(i)])
 
     points.append([0, -r * 2])
@@ -60,7 +62,7 @@ def curved_z(l, r, n=5):
     cx, cy = points[-1]
     cy -= r
 
-    for i in np.linspace(np.pi / 2, 3 * np.pi / 2, num=n):
+    for i in np.linspace(np.pi / 2 + dx, 3 * np.pi / 2, num=n):
         points.append([cx + r * np.cos(i), cy + r * np.sin(i)])
 
     points.append([l, -4 * r])
