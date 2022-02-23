@@ -11,7 +11,7 @@ import matplotlib
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
-from new_test_courses import z_course
+from new_test_courses import z_course, straight_line, curved_z
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
 from test_course import test_course3, hard_course
@@ -126,7 +126,9 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
     summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
     summary.add_scalar("Error/Average Velocity", avg_velocity, global_step=epoch)
-    plot_anfis_data(summary, epoch, agent)
+
+    if train:
+        plot_anfis_data(summary, epoch, agent)
 
     x = np.arange(0, len(distance_errors))
 
@@ -239,7 +241,8 @@ def epoch(i, agent, path, summary, checkpoint, params, pauser, jackal, noise=Non
 
     rospy.on_shutdown(
         lambda: shutdown(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
-                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights, train))
+                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components, rule_weights,
+                         train))
 
     if noise is not None:
         noise.reset()
@@ -513,7 +516,9 @@ if __name__ == '__main__':
         train = True
         agent.train_inputs = False
 
-        validation_courses = {"Z Course": z_course(5, 15, 180, 15), "Hard 400": hard_course(400)}
+        validation_courses = {"Z Course": z_course(5, 15, 180, 15),
+                              "Straight Line": straight_line(), "Straight Line Mini": straight_line(n=10),
+                              "Curved line 1m 0.5m": curved_z(1, .5, 7), "Curved line 5m 1m": curved_z(5, 1, 7)}
 
         for k, v in validation_courses.items():
             extend_path(v)

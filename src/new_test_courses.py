@@ -36,6 +36,38 @@ def z_course(segment_length, start_angle=0, end_angle=180, step_angle=15):
     return points
 
 
+def straight_line(d=10, n=2):
+    p = []
+    for i in np.linspace(0, d, num=n):
+        p.append([i, 0])
+    return p
+
+
+def curved_z(l, r, n=5):
+    points = [
+        [0, 0],
+        [l, 0]
+    ]
+
+    cx, cy = points[-1]
+    cy -= r
+
+    for i in np.linspace(np.pi / 2, -np.pi / 2, num=n):
+        points.append([cx + r * np.cos(i), cy + r * np.sin(i)])
+
+    points.append([0, -r * 2])
+
+    cx, cy = points[-1]
+    cy -= r
+
+    for i in np.linspace(np.pi / 2, 3 * np.pi / 2, num=n):
+        points.append([cx + r * np.cos(i), cy + r * np.sin(i)])
+
+    points.append([l, -4 * r])
+
+    return points
+
+
 if __name__ == '__main__':
     points = z_course(12, 45, 180)
 
