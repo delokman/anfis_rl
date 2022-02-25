@@ -41,8 +41,9 @@ import rospkg
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
-epoch_number = 1
-
+epoch_number = 4
+min_velocity_training_RMSE = 0.09
+min_general_training_RMSE = 0.03
 
 def call_service(service_name, service_type, data):
     rospy.wait_for_service(service_name)
@@ -121,6 +122,11 @@ def summary_and_logging(summary, agent, params, jackal, path, distance_errors, t
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
     avg_velocity = np.mean(velocities)
     print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
+
+    if dist_error_rsme < min_velocity_training_RMSE:
+        agent.train_velocity = False
+    else:
+        agent.train_velocity = True
 
     summary.add_figure("Path/Plot", fig, global_step=epoch)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
@@ -511,7 +517,7 @@ if __name__ == '__main__':
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
 
-        error_threshold = 0.0075
+        error_threshold = 0.03
 
         train = True
         agent.train_inputs = False
