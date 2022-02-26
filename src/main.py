@@ -522,13 +522,14 @@ if __name__ == '__main__':
         train = True
         agent.train_inputs = False
 
-        validation_courses = {"Z Course": z_course(5, 15, 180, 15),
-                              "Straight Line": straight_line(), "Straight Line Mini": straight_line(n=10),
-                              "Curved line 1m 0.5m": curved_z(1, .5, 7), "Curved line 5m 1m": curved_z(5, 1, 7)}
+        if is_simulation:
+            validation_courses = {"Z Course": z_course(5, 15, 180, 15),
+                                  "Straight Line": straight_line(), "Straight Line Mini": straight_line(n=10),
+                                  "Curved line 1m 0.5m": curved_z(1, .5, 7), "Curved line 5m 1m": curved_z(5, 1, 7)}
 
-        for k, v in validation_courses.items():
-            extend_path(v)
-            validation_courses[k] = [v, SummaryWriter(f'{package_location}/runs/{name}/{k}')]
+            for k, v in validation_courses.items():
+                extend_path(v)
+                validation_courses[k] = [v, SummaryWriter(f'{package_location}/runs/{name}/{k}')]
 
         for i in range(params['epoch_nums']):
             summary.add_scalar('model/learning', train, i)
