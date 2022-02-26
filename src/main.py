@@ -520,7 +520,7 @@ if __name__ == '__main__':
         error_threshold = 0.03
 
         train = True
-        agent.train_inputs = False
+        agent.train_inputs = True
 
         if is_simulation:
             validation_courses = {"Z Course": z_course(5, 15, 180, 15),
