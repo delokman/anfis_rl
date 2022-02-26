@@ -556,7 +556,7 @@ if __name__ == '__main__':
                     scheduler2.step()
                 # sys.exit()
 
-            if i % 10 == 0:
+            if is_simulation and i % 10 == 0:
                 for k, v in validation_courses.items():
                     agent.eval()
                     path, val_summary = v
