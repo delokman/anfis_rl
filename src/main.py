@@ -471,7 +471,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
             add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
             if update_step % params['update_rate'] == 0 and train:
-                agent_update(agent, params['batch_size'], dist_e, rule_weights, summary)
+                agent_update(agent, params['batch_size'], summary)
 
                 if show_gradients and len(agent.memory) > params['batch_size']:
                     for name, p in agent.actor.named_parameters():
