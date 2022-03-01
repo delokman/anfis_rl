@@ -45,16 +45,28 @@ class WeightedSumLayer(torch.nn.Module):
 
 
 class ProductSum(torch.nn.Module):
+    """
+    Takes the sum the product of the rules and the weights associated with them in order to return the overall output
+    """
+
     def forward(self, weights, tsk):
         return torch.matmul(weights, tsk)
 
 
 class Empty(torch.nn.Module):
+    """
+    Does nothing
+    """
+
     def forward(self, *params):
         pass
 
 
 class Normalization(torch.nn.Module):
+    """
+    Normalizes the weights using norm 1 to get the output result
+    """
+
     def forward(self, weights):
         return F.normalize(weights, p=1, dim=1)
 
