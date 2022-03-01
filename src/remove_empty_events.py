@@ -34,7 +34,7 @@ for folder_name in directories:
     counter = 0
     error = False
 
-    num_data_threshold = 10
+    num_data_threshold = 25
 
     try:
         for event in my_summary_iterator(event_file):
