@@ -121,12 +121,12 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
 
     empty = [0 for _ in range(n_plots)]
 
-    for x in range(n_plots):
-        for y in range(n_plots):
-            x_d = variable_ranges[y]
-            y_d = variable_ranges[x]
+    for y in range(n_plots):
+        for x in range(n_plots):
+            x_d = variable_ranges[x]
+            y_d = variable_ranges[y]
 
-            xx, yy = np.meshgrid(x_d, y_d)
+            xx, yy = np.meshgrid(x_d, y_d, indexing='ij')
 
             data = np.zeros((x_d.shape[0], y_d.shape[0]))
             for i in range(x_d.shape[0]):
@@ -137,18 +137,20 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
 
                     data[i, j] = reward_function(*d)
 
-            ax: Axes = axs[x, y]
+            ax: Axes = axs[y, x]
+            # ax.text(0, 0, f"({x}, {y})")
             ax.contourf(xx, yy, data, res, cmap='gray')
 
             bot = False
             side = False
-            if y == 0:
-                side = True
-                ax.set_ylabel(variable_names[x])
-            if x == n_plots - 1:
+            if y == n_plots - 1:
                 bot = True
-                ax.set_xlabel(variable_names[y])
+                ax.set_xlabel(variable_names[x])
+            if x == 0:
+                side = True
+                ax.set_ylabel(variable_names[y])
             ax.tick_params(labelbottom=bot, labelleft=side)
+            # ax.tick_params(labelbottom=False, labelleft=False)
 
     fig.tight_layout()
     return fig
