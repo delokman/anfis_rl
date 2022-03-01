@@ -132,10 +132,16 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
             for i in range(x_d.shape[0]):
                 for j in range(y_d.shape[0]):
                     d = empty[:]
-                    d[x] = x_d[i]
-                    d[y] = y_d[j]
 
-                    data[i, j] = reward_function(*d)
+                    if x != y:
+                        d[x] = x_d[i]
+                        d[y] = y_d[j]
+                        data[i, j] = reward_function(*d)
+                    else:
+                        d[x] = x_d[i]
+                        data[i, j] = reward_function(*d)
+                        d[y] = y_d[j]
+                        data[i, j] += reward_function(*d)
 
             ax: Axes = axs[y, x]
             # ax.text(0, 0, f"({x}, {y})")
