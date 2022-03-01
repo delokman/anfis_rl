@@ -1,4 +1,9 @@
+from typing import List, Callable
+
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from torch.utils.tensorboard.summary import hparams
 
 
@@ -83,3 +88,67 @@ class DoNothing:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+
+def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variable_names: List[str],
+                                       reward_function: Callable[..., float], res: int = 50) -> Figure:
+    """
+    Implemented function to visualize the reward output of each of the variables, related with each other as contour plots
+
+    Example:
+    
+    >>> def reward(a, b, c, d):
+    ...     return a + b + c
+    >>> variable_ranges = [
+    ...    np.linspace(0, 1),
+    ...    np.linspace(1, 2),
+    ...    np.linspace(2, 3),
+    ...    np.linspace(0, 1),
+    ... ]
+    >>> variable_names = ["A", "B", "C", "D"]
+    >>> fig = reward_function_grid_visualization(variable_ranges, variable_names, reward)
+    >>> plt.show()
+
+    :param variable_ranges: the variables ranges to calculate the rewards for
+    :param variable_names: the names of the variables to place in the axes of the figure
+    :param reward_function: the reward function to use to plot the output
+    :param res: the resolution of the contour lines of the figure
+    :return: The reward grid figure
+    """
+
+    n_plots = len(variable_ranges)
+    fig, axs = plt.subplots(nrows=n_plots, ncols=n_plots)
+
+    empty = [0 for _ in range(n_plots)]
+
+    for x in range(n_plots):
+        for y in range(n_plots):
+            x_d = variable_ranges[y]
+            y_d = variable_ranges[x]
+
+            xx, yy = np.meshgrid(x_d, y_d)
+
+            data = np.zeros((x_d.shape[0], y_d.shape[0]))
+            for i in range(x_d.shape[0]):
+                for j in range(y_d.shape[0]):
+                    d = empty[:]
+                    d[x] = x_d[i]
+                    d[y] = y_d[j]
+
+                    data[i, j] = reward_function(*d)
+
+            ax: Axes = axs[x, y]
+            ax.contourf(xx, yy, data, res, cmap='gray')
+
+            bot = False
+            side = False
+            if y == 0:
+                side = True
+                ax.set_ylabel(variable_names[x])
+            if x == n_plots - 1:
+                bot = True
+                ax.set_xlabel(variable_names[y])
+            ax.tick_params(labelbottom=bot, labelleft=side)
+
+    fig.tight_layout()
+    return fig
