@@ -656,7 +656,6 @@ if __name__ == '__main__':
 
             for k, v in validation_courses.items():
                 extend_path(v)
-                validation_courses[k] = [v, SummaryWriter(f'{package_location}/runs/{name}/{k}')]
 
         for i in range(params['epoch_nums']):
             summary.add_scalar('model/learning', train, i)
@@ -686,6 +685,10 @@ if __name__ == '__main__':
 
             if is_simulation and i % 10 == 0:
                 for k, v in validation_courses.items():
+                    if isinstance(v, list):
+                        v = (v, SummaryWriter(f'{package_location}/runs/{name}/{k}'))
+                        validation_courses[k] = v
+
                     agent.eval()
                     path, val_summary = v
                     epoch(i, agent, path, val_summary, checkpoint_saver, params, pauser, jackal, noise,
