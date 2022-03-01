@@ -202,7 +202,7 @@ class DDPGAgent(torch.nn.Module):
 
         # Critic loss
         Qvals = self.critic.forward(states, actions)
-        next_actions = self.actor_target.forward(next_states)
+        next_actions = self.actor_target.forward(next_states).detach()
         next_Q = self.critic_target.forward(next_states, next_actions)
         Qprime = rewards + self.gamma * next_Q
         critic_loss = F.mse_loss(Qvals * weights, Qprime * weights)
@@ -213,7 +213,7 @@ class DDPGAgent(torch.nn.Module):
         self.critic_optimizer.step()
 
         # Actor loss
-        policy_loss = self.critic.forward(states, self.actor.forward(states)).mean()
+        policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
         # update networks
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
@@ -235,8 +235,8 @@ class DDPGAgent(torch.nn.Module):
             self.memory.update_priorities(batch_idxes, TD_error)
 
         if summary is not None:
-            summary.add_scalar("Update/Actor Loss", policy_loss, global_step=self.summary_index)
-            summary.add_scalar("Update/Critic Loss", critic_loss, global_step=self.summary_index)
+            summary.add_scalar("Update/Actor Loss", policy_loss.detach(), global_step=self.summary_index)
+            summary.add_scalar("Update/Critic Loss", critic_loss.detach(), global_step=self.summary_index)
             # summary.add_scalar("Update/Velocity Regularization", vel_average, global_step=self.summary_index)
             summary.add_scalar("Update/TD Error", torch.mean(TD_error), global_step=self.summary_index)
 
