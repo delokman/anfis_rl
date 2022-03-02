@@ -637,3 +637,4 @@ if __name__ == '__main__':
         summary.close()
 
         print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
+    #I <3 DDPG
