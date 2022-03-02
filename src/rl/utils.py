@@ -123,3 +123,38 @@ def reward(errors, linear_vel, angular_vel, params):
     rewards = (dis + theta_near + theta_recovery + linear_vel + angular_vel + theta_lookahead) / scale
     return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,
                      theta_lookahead / scale]
+
+
+def reward2(errors, linear_vel, angular_vel, params):
+    target, dis, theta_lookahead, theta_recovery, theta_near = errors
+
+    distance_error = 1 - abs(dis) ** 0.25
+
+    min_radius = 0.5
+    max_vel = 2
+
+    target_discount = 1 - (target / min_radius) ** 0.5
+
+    if target_discount < 0:
+        target_discount = 0
+
+    theta_lookahead_error = 1 - (abs(theta_lookahead) / np.pi) ** (0.5)
+
+    angle_forward_total = theta_lookahead_error * target_discount
+
+    linear_vel_error = (linear_vel / max_vel) ** 0.5
+
+    theta_near_error = 1 - (abs(theta_near) / np.pi) ** 0.3
+
+    distance_error *= 1
+    angle_forward_total *= 1
+    theta_near_error *= 1
+    linear_vel_error *= 1
+
+    reward = distance_error + angle_forward_total + linear_vel_error + theta_near_error
+
+    theta_recovery_error = 0
+    angular_vel_error = 0
+
+    return reward, [distance_error, theta_near_error, theta_recovery_error, linear_vel_error, angular_vel_error,
+                    angle_forward_total]
