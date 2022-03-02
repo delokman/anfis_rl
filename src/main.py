@@ -434,7 +434,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 control_law, velocity = control_law
 
             if rule_weights is not None:
-                rule_weights.append(agent.actor.weights)
+                rule_weights.append(agent.actor.weights.detach())
 
             if noise is not None:
                 control_law = noise.get_action(control_law, update_step)
