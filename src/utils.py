@@ -146,6 +146,7 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
             ax: Axes = axs[y, x]
             # ax.text(0, 0, f"({x}, {y})")
             ax.contourf(xx, yy, data, res, cmap='gray')
+            ax.contour(xx, yy, data, res // 5)
 
             bot = False
             side = False
