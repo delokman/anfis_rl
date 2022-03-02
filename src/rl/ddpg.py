@@ -73,10 +73,16 @@ class DDPGAgent(torch.nn.Module):
 
         for name, v in self.actor_optimizer.defaults.items():
             if type(v) in param_type:
+                if isinstance(v, torch.Tensor):
+                    v = v.detach()
+
                 self.input_params[f'actor_optim_{name}'] = v
 
         for name, v in self.critic_optimizer.defaults.items():
             if type(v) in param_type:
+                if isinstance(v, torch.Tensor):
+                    v = v.detach()
+
                 self.input_params[f'critic_optim_{name}'] = v
 
         if self.use_cuda:
@@ -230,9 +236,9 @@ class DDPGAgent(torch.nn.Module):
         self.soft_update(self.critic_target, self.critic)
 
         with torch.no_grad():
-            TD_error = Qprime - Qvals
+            TD_error = (Qprime - Qvals).detach()
         if self.priority:
-            self.memory.update_priorities(batch_idxes, TD_error)
+            self.memory.update_priorities(batch_idxes, torch.abs(TD_error))
 
         if summary is not None:
             summary.add_scalar("Update/Actor Loss", policy_loss.detach(), global_step=self.summary_index)
