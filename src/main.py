@@ -43,10 +43,6 @@ import rospkg
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
-epoch_number = 4
-min_velocity_training_RMSE = 0.09
-min_general_training_RMSE = 0.03
-
 
 def call_service(service_name: str, service_type, data):
     """
@@ -191,11 +187,6 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
     avg_velocity = np.mean(velocities)
     print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
-
-    if dist_error_rsme < min_velocity_training_RMSE:
-        agent.train_velocity = False
-    else:
-        agent.train_velocity = True
 
     summary.add_figure("Path/Plot", fig, global_step=epoch)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
@@ -498,6 +489,11 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
                                          rule_weights, train)
+    # min_velocity_training_RMSE = 0.09
+    # if dist_error_rsme < min_velocity_training_RMSE:
+    #     agent.train_velocity = False
+    # else:
+    #     agent.train_velocity = True
 
     return dist_error_mae, error
 
@@ -533,6 +529,7 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
+    epoch_number = 4
     for i in range(epoch_number):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
