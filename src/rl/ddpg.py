@@ -213,7 +213,7 @@ class DDPGAgent(torch.nn.Module):
         self.critic_optimizer.step()
 
         # Actor loss
-        policy_loss = self.critic.forward(states, self.actor.forward(states)).mean()
+        policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
         # update networks
         self.actor_optimizer.zero_grad()
         policy_loss.backward()

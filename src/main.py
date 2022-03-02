@@ -6,7 +6,6 @@ import json
 import os
 import random
 import traceback
-from typing import Tuple
 
 import matplotlib
 from torch.optim.lr_scheduler import ExponentialLR
@@ -15,8 +14,7 @@ from tqdm import tqdm
 from new_test_courses import z_course, straight_line, curved_z
 from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
-from rl.noise import OUNoise
-from test_course import test_course3
+from test_course import test_course3, hard_course
 from utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
@@ -43,10 +41,6 @@ import rospkg
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
-epoch_number = 4
-min_velocity_training_RMSE = 0.09
-min_general_training_RMSE = 0.03
-
 
 def call_service(service_name: str, service_type, data):
     """
@@ -65,28 +59,14 @@ def call_service(service_name: str, service_type, data):
         print("Service call failed: %s" % e)
 
 
-def reset_world(is_simulation: bool = False):
-    """
-    Resets the Gazebo world by calling the /gazebo/reset_world and the /set_pose of the robot and then waits for 2 s
-
-    Args:
-        is_simulation (bool): flag to see if this is a simulation environment or not, if it is a simulation environment call the services otherwise just wait 2 second
-    """
+def reset_world(is_simulation=False):
     if is_simulation:
         call_service('/gazebo/reset_world', Empty, [])
         call_service('/set_pose', SetPose, [])
     rospy.sleep(2)
 
 
-def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):
-    """
-    Plots the actor's fuzzy consequence layer (the triangle output membership functions), the membership functions (all the input membership trapezoids) as images and then all the associated parameters as scalars
-
-    Args:
-        summary:  the summary writer to write the output to
-        epoch: the current epoch number, will be the x axis
-        agent: the DDPG model
-    """
+def plot_anfis_data(summary, epoch, agent):
     anfis = agent.actor
 
     plot_fuzzy_consequent(summary, anfis, epoch)
@@ -94,30 +74,12 @@ def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):
     plot_fuzzy_variables(summary, anfis, epoch)
 
 
-def agent_update(agent: DDPGAgent, batch_size: int, summary: SummaryWriter = None):
-    """
-    Performs the model update step, in this case performs the DDPG model gradient descent steps
-
-    Args:
-        agent: the DDPG or any model to update
-        batch_size: the batch size to use to sample from memory
-        summary: the summary writer to write some debugging information to, such as actor loss, critic loss and TD
-    """
+def agent_update(agent, batch_size, dis_error, rule_weights=None, summary=None):
     if len(agent.memory) > batch_size:
         agent.update(batch_size, summary)
 
 
-def add_to_memory(new_state: np.array, rewards: float, control_law: float, agent: DDPGAgent, done: bool):
-    """
-    Adds the current state to the agent's memory to be later resampled when running the training update
-
-    Args:
-        new_state: the cent state of the jackal
-        rewards: the associated reward of the current state
-        control_law: the current output action of the model
-        agent: the DPPG model
-        done: if the model has reached the end of the path
-    """
+def add_to_memory(new_state, rewards, control_law, agent, done):
     ####do this every 0.075 s
     state = agent.curr_states
     new_state = np.array(new_state)
@@ -125,35 +87,9 @@ def add_to_memory(new_state: np.array, rewards: float, control_law: float, agent
     agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
 
 
-def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jackal, path: Path,
-                        distance_errors: list, theta_far_errors: list, theta_near_errors: list,
-                        rewards_cummulative: list, checkpoint: LowestCheckpoint, epoch: int, yaw_rates: list,
-                        velocities: list, reward_components: list, rule_weights: list = None,
-                        train: bool = True) -> float:
-    """
-    Runs the end of epoch plotting for all the states and information of the DDPG model useful for the troubleshooting
-
-    Args:
-        summary: the summary to write the data
-        agent: the DDPG model
-        params: the params dictionary that contain the hyper-parameters of the training
-        jackal: the Jackal object
-        path: the current path of the robot trajectory
-        distance_errors: the perpendicular distance errors during the run of the epoch
-        theta_far_errors: the theta recovery during the run of the epoch
-        theta_near_errors: the theta near errors during the run of the epoch
-        rewards_cummulative: the total reward during the run
-        checkpoint: the checkpoint of the network, a new checkpoint will be saved if the MAE is smaller than the lowest
-        epoch: the current epoch number
-        yaw_rates: the yaw rates during the run of the epoch
-        velocities: the velocity during the run of the epoch
-        reward_components: the individual components of the reward function during the run of the epoch
-        rule_weights: the weights of the rules during the run of the epoch
-        train: flag to know if the model is currently in training mode
-
-    Returns: the mean distance error of the epoch give the distance_errors
-
-    """
+def summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors, theta_near_errors,
+                        rewards_cummulative,
+                        checkpoint, epoch, yaw_rates, velocities, reward_components, rule_weights=None, train=True):
     plot_critic_weights(summary, agent, epoch)
 
     if rule_weights is not None and len(rule_weights) > 0:
@@ -191,11 +127,6 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
     dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
     avg_velocity = np.mean(velocities)
     print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
-
-    if dist_error_rsme < min_velocity_training_RMSE:
-        agent.train_velocity = False
-    else:
-        agent.train_velocity = True
 
     summary.add_figure("Path/Plot", fig, global_step=epoch)
     summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
@@ -411,7 +342,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 theta_far_errors.append(theta_far)
                 theta_near_errors.append(theta_near)
 
-                if not params['simulation'] and dist_e > 4:
+                if not params['simulation'] and dist_e > params['max_dist_error']:
                     print("Reloading from save,", checkpoint.checkpoint_location)
                     if train:
                         checkpoint.reload(agent)
@@ -471,7 +402,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
             add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
             if update_step % params['update_rate'] == 0 and train:
-                agent_update(agent, params['batch_size'], summary)
+                agent_update(agent, params['batch_size'], dist_e, rule_weights, summary)
 
                 if show_gradients and len(agent.memory) > params['batch_size']:
                     for name, p in agent.actor.named_parameters():
@@ -498,6 +429,11 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
                                          rule_weights, train)
+    #min_velocity_training_RMSE = 0.09
+    # if dist_error_rsme < min_velocity_training_RMSE:
+    #     agent.train_velocity = False
+    # else:
+    #     agent.train_velocity = True
 
     return dist_error_mae, error
 
@@ -533,6 +469,7 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
+    epoch_number = 1
     for i in range(epoch_number):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
@@ -602,7 +539,8 @@ if __name__ == '__main__':
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
             'critic_decay': scheduler1.gamma,
-            'velocity_controlled': agent.actor.velocity
+            'velocity_controlled': agent.actor.velocity,
+            'max_dist_error': 4
         }
 
         reward_scales = {
@@ -644,7 +582,7 @@ if __name__ == '__main__':
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
 
-        error_threshold = 0.03
+        error_threshold = 0.001
 
         train = True
         agent.train_inputs = True
