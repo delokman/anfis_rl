@@ -191,7 +191,7 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
         avg_velocity = np.mean(velocities)
         print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
 
-        if dist_error_rsme < min_velocity_training_RMSE:
+        if dist_error_rsme < params["min_velocity_training_RMSE"]:
             agent.train_velocity = False
         else:
             agent.train_velocity = True
@@ -613,7 +613,8 @@ if __name__ == '__main__':
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
             'critic_decay': scheduler1.gamma,
-            'velocity_controlled': agent.actor.velocity
+            'velocity_controlled': agent.actor.velocity,
+            "min_velocity_training_RMSE": min_velocity_training_RMSE
         }
 
         reward_scales = {
