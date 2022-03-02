@@ -70,6 +70,35 @@ def curved_z(l, r, n=5):
     return points
 
 
+def courses_double_circle(n, r1=0.5, r2=1.):
+    points = [
+        [0, 0],
+    ]
+
+    shift = 2
+
+    cx, cy = shift, r1
+
+    dx = np.pi / n
+
+    for i in np.linspace(-np.pi / 2 + dx, np.pi / 2, num=n):
+        points.append([cx + r1 * np.cos(i), cy + r1 * np.sin(i)])
+
+    cx, cy = shift, r1 * 3
+    for i in np.linspace(3 * np.pi / 2 - dx, np.pi / 2, num=n):
+        points.append([cx + r1 * np.cos(i), cy + r1 * np.sin(i)])
+
+    cx, cy = shift, r1 * 4 - r2
+    for i in np.linspace(np.pi / 2 - dx, -np.pi / 2, num=n):
+        points.append([cx + r2 * np.cos(i), cy + r2 * np.sin(i)])
+
+    cx, cy = shift, r1 * 4 - r2 * 3
+    for i in np.linspace(-3 * np.pi / 2 + dx, -np.pi / 2, num=n):
+        points.append([cx + r2 * np.cos(i), cy + r2 * np.sin(i)])
+
+    return points
+
+
 if __name__ == '__main__':
     points = z_course(12, 45, 180)
 
