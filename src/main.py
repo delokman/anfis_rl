@@ -9,6 +9,7 @@ import traceback
 from typing import Tuple
 
 import matplotlib
+import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
@@ -24,7 +25,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
-import torch
 from std_srvs.srv import Empty
 from robot_localization.srv import SetPose
 
@@ -36,13 +36,14 @@ from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
-from rl.utils import fuzzy_error, reward
+from rl.utils import fuzzy_error, reward2
 
 import rospkg
 
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
+
 
 def call_service(service_name: str, service_type, data):
     """
@@ -114,11 +115,12 @@ def add_to_memory(new_state: np.array, rewards: float, control_law: float, agent
         agent: the DPPG model
         done: if the model has reached the end of the path
     """
-    ####do this every 0.075 s
-    state = agent.curr_states
-    new_state = np.array(new_state)
-    agent.curr_states = new_state
-    agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
+    with torch.no_grad():
+        ####do this every 0.075 s
+        state = agent.curr_states
+        new_state = np.array(new_state)
+        agent.curr_states = new_state
+        agent.memory.push(state, control_law, rewards, new_state, done)  ########control_law aftergain or before gain?
 
 
 def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jackal, path: Path,
@@ -150,104 +152,110 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
     Returns: the mean distance error of the epoch give the distance_errors
 
     """
-    plot_critic_weights(summary, agent, epoch)
+    with torch.no_grad():
+        plot_critic_weights(summary, agent, epoch)
 
-    if rule_weights is not None and len(rule_weights) > 0:
+        if rule_weights is not None and len(rule_weights) > 0:
+            fig, ax = plt.subplots()
+
+            averages = torch.mean(torch.mean(torch.stack(rule_weights), dim=1), dim=0)
+            rule_ids = [_ for _ in range(averages.shape[0])]
+
+            if agent.use_cuda:
+                averages = averages.cpu().detach().numpy()
+            else:
+                averages = averages.detach().numpy()
+
+            ax.bar(rule_ids, averages)
+            ax.set_xticks(rule_ids)
+            ax.set_ylabel('Rule weight')
+            ax.set_xlabel('Rule')
+            fig.tight_layout()
+
+            summary.add_figure('Rules', fig, global_step=epoch)
+
+        # plot
+        test_path = np.array(path.path)
+        robot_path = np.array(jackal.inverse_transform_poses(path))
+
         fig, ax = plt.subplots()
-
-        averages = torch.mean(torch.mean(torch.stack(rule_weights), dim=1), dim=0)
-        rule_ids = [_ for _ in range(averages.shape[0])]
-
-        if agent.use_cuda:
-            averages = averages.cpu().detach().numpy()
-        else:
-            averages = averages.detach().numpy()
-
-        ax.bar(rule_ids, averages)
-        ax.set_xticks(rule_ids)
-        ax.set_ylabel('Rule weight')
-        ax.set_xlabel('Rule')
+        ax.set_aspect('equal')
+        ax.plot(test_path[:-1, 0], test_path[:-1, 1])
+        ax.plot(robot_path[:, 0], robot_path[:, 1])
         fig.tight_layout()
 
-        summary.add_figure('Rules', fig, global_step=epoch)
+        distance_errors = np.asarray(distance_errors)
 
-    # plot
-    test_path = np.array(path.path)
-    robot_path = np.array(jackal.inverse_transform_poses(path))
+        dist_error_mae = np.mean(np.abs(distance_errors))
+        dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
+        avg_velocity = np.mean(velocities)
+        print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
 
-    fig, ax = plt.subplots()
-    ax.set_aspect('equal')
-    ax.plot(test_path[:-1, 0], test_path[:-1, 1])
-    ax.plot(robot_path[:, 0], robot_path[:, 1])
-    fig.tight_layout()
+        if dist_error_rsme < min_velocity_training_RMSE:
+            agent.train_velocity = False
+        else:
+            agent.train_velocity = True
 
-    distance_errors = np.asarray(distance_errors)
+        summary.add_figure("Path/Plot", fig, global_step=epoch)
+        summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
+        summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
+        summary.add_scalar("Error/Average Velocity", avg_velocity, global_step=epoch)
 
-    dist_error_mae = np.mean(np.abs(distance_errors))
-    dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
-    avg_velocity = np.mean(velocities)
-    print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
+        if train:
+            plot_anfis_data(summary, epoch, agent)
 
-    summary.add_figure("Path/Plot", fig, global_step=epoch)
-    summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
-    summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
-    summary.add_scalar("Error/Average Velocity", avg_velocity, global_step=epoch)
+        x = np.arange(0, len(distance_errors))
 
-    if train:
-        plot_anfis_data(summary, epoch, agent)
+        fig, ax = plt.subplots()
+        ax.plot(x, distance_errors)
+        fig.tight_layout()
+        summary.add_figure("Graphs/Distance Errors", fig, global_step=epoch)
 
-    x = np.arange(0, len(distance_errors))
+        fig, ax = plt.subplots()
+        ax.plot(x, theta_near_errors)
+        fig.tight_layout()
+        summary.add_figure("Graphs/Theta Near Errors", fig, global_step=epoch)
 
-    fig, ax = plt.subplots()
-    ax.plot(x, distance_errors)
-    fig.tight_layout()
-    summary.add_figure("Graphs/Distance Errors", fig, global_step=epoch)
+        fig, ax = plt.subplots()
+        ax.plot(x, theta_far_errors)
+        fig.tight_layout()
+        summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
 
-    fig, ax = plt.subplots()
-    ax.plot(x, theta_near_errors)
-    fig.tight_layout()
-    summary.add_figure("Graphs/Theta Near Errors", fig, global_step=epoch)
+        x = np.arange(0, len(velocities))
+        fig, ax = plt.subplots()
+        ax.plot(x, velocities)
+        fig.tight_layout()
+        summary.add_figure("Logs/Velocity", fig, global_step=epoch)
 
-    fig, ax = plt.subplots()
-    ax.plot(x, theta_far_errors)
-    fig.tight_layout()
-    summary.add_figure("Graphs/Theta Far Errors", fig, global_step=epoch)
+        fig, ax = plt.subplots()
+        ax.plot(x, yaw_rates)
+        fig.tight_layout()
+        summary.add_figure("Logs/Yaw Rate", fig, global_step=epoch)
 
-    x = np.arange(0, len(velocities))
-    fig, ax = plt.subplots()
-    ax.plot(x, velocities)
-    fig.tight_layout()
-    summary.add_figure("Logs/Velocity", fig, global_step=epoch)
+        x = np.arange(0, len(rewards_cummulative))
+        fig, ax = plt.subplots()
+        ax.plot(x, rewards_cummulative)
+        fig.tight_layout()
+        summary.add_figure("Reward/Rewards", fig, global_step=epoch)
 
-    fig, ax = plt.subplots()
-    ax.plot(x, yaw_rates)
-    fig.tight_layout()
-    summary.add_figure("Logs/Yaw Rate", fig, global_step=epoch)
+        total = sum(rewards_cummulative)
+        summary.add_scalar('Error/Total Reward', total, global_step=epoch)
 
-    x = np.arange(0, len(rewards_cummulative))
-    fig, ax = plt.subplots()
-    ax.plot(x, rewards_cummulative)
-    fig.tight_layout()
-    summary.add_figure("Reward/Rewards", fig, global_step=epoch)
+        fig, ax = plt.subplots()
+        temp = ax.plot(x, reward_components)
+        ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel', 'theta_lookahead'))
+        fig.tight_layout()
+        summary.add_figure("Reward/Rewards Components", fig, global_step=epoch)
 
-    total = sum(rewards_cummulative)
-    summary.add_scalar('Error/Total Reward', total, global_step=epoch)
+        if train:
+            checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
 
-    fig, ax = plt.subplots()
-    temp = ax.plot(x, reward_components)
-    ax.legend(temp, ('dis', 'theta_near', 'theta_far', 'linear_vel', 'angular_vel', 'theta_lookahead'))
-    fig.tight_layout()
-    summary.add_figure("Reward/Rewards Components", fig, global_step=epoch)
+            agent.save_checkpoint(checkpoint_loc)
 
-    if train:
-        checkpoint_loc = os.path.join(summary.get_logdir(), "checkpoints", f"{epoch}-{dist_error_mae}.chkp")
+            checkpoint.update(dist_error_mae, checkpoint_loc)
 
-        agent.save_checkpoint(checkpoint_loc)
-
-        checkpoint.update(dist_error_mae, checkpoint_loc)
-
-        add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
-    return dist_error_mae
+            add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
+        return dist_error_mae
 
 
 def shutdown(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jackal, path: Path, distance_errors: list,
@@ -324,11 +332,13 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
     jackal.wait_for_publisher()
 
-    jackal.linear_velocity = params['linear_vel']
-    velocity = jackal.linear_velocity
+    with torch.no_grad():
+        jackal.linear_velocity = agent.actor.layer[
+            'consequent'].mamdani_defs_vel.get_fast().detach()  # params['linear_vel']
+        velocity = jackal.linear_velocity
 
-    timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
-    print("Path Timeout period", timeout_time)
+        timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
+        print("Path Timeout period", timeout_time)
 
     distance_errors = []
     theta_far_errors = []
