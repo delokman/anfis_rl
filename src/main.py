@@ -41,6 +41,7 @@ import rospkg
 np.random.seed(42)
 random.seed(42)
 torch.random.manual_seed(42)
+#hi
 
 def call_service(service_name: str, service_type, data):
     """
