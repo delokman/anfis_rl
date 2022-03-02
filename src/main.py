@@ -36,7 +36,7 @@ from jackal import Jackal
 from path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
-from rl.utils import fuzzy_error, reward2
+from rl.utils import fuzzy_error, reward2, reward
 
 import rospkg
 
@@ -396,7 +396,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 print("Exceeded timeout returning to checkpoint")
 
                 print("Reloading from save,", checkpoint.checkpoint_location)
-                checkpoint.reload(agent)
+                # checkpoint.reload(agent)
                 error = True
                 break
 
