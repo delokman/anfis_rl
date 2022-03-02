@@ -187,18 +187,13 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
         distance_errors = np.asarray(distance_errors)
 
         dist_error_mae = np.mean(np.abs(distance_errors))
-        dist_error_rsme = np.sqrt(np.mean(np.power(distance_errors, 2)))
+        dist_error_rmse = np.sqrt(np.mean(np.power(distance_errors, 2)))
         avg_velocity = np.mean(velocities)
-        print("MAE:", dist_error_mae, "RSME:", dist_error_rsme, "AVG Velocity:", avg_velocity)
-
-        if dist_error_rsme < params["min_velocity_training_RMSE"]:
-            agent.train_velocity = False
-        else:
-            agent.train_velocity = True
+        print("MAE:", dist_error_mae, "RSME:", dist_error_rmse, "AVG Velocity:", avg_velocity)
 
         summary.add_figure("Path/Plot", fig, global_step=epoch)
         summary.add_scalar("Error/Dist Error MAE", dist_error_mae, global_step=epoch)
-        summary.add_scalar("Error/Dist Error RSME", dist_error_rsme, global_step=epoch)
+        summary.add_scalar("Error/Dist Error RSME", dist_error_rmse, global_step=epoch)
         summary.add_scalar("Error/Average Velocity", avg_velocity, global_step=epoch)
 
         if train:
@@ -255,7 +250,7 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
             checkpoint.update(dist_error_mae, checkpoint_loc)
 
             add_hparams(summary, params, {'hparams/Best MAE': checkpoint.error}, step=epoch)
-        return dist_error_mae
+        return dist_error_rmse, dist_error_mae
 
 
 def shutdown(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jackal, path: Path, distance_errors: list,
@@ -412,7 +407,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 theta_far_errors.append(theta_far)
                 theta_near_errors.append(theta_near)
 
-                if not params['simulation'] and dist_e > 4:
+                max_dist_error = 4
+                if not params['simulation'] and dist_e > max_dist_error:
                     print("Reloading from save,", checkpoint.checkpoint_location)
                     if train:
                         checkpoint.reload(agent)
@@ -495,12 +491,12 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
             dist = torch.stack(values)
             summary.add_histogram(f"Gradients/{name}", dist, global_step=i)
 
-    dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
+    dist_error_rmse, dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
                                          rule_weights, train)
     # min_velocity_training_RMSE = 0.09
-    # if dist_error_rsme < min_velocity_training_RMSE:
+    # if dist_error_rmse < min_velocity_training_RMSE:
     #     agent.train_velocity = False
     # else:
     #     agent.train_velocity = True
@@ -540,11 +536,9 @@ if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
     validate = False
-    epoch_number = 4
-    min_velocity_training_RMSE = 0.009
-    min_general_training_RMSE = 0.003
 
-    for i in range(epoch_number):
+    trial_num = 4
+    for i in range(trial_num):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
         # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
@@ -656,7 +650,7 @@ if __name__ == '__main__':
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
 
-        error_threshold = 0.03
+        error_threshold = 0.0075
 
         train = True
         agent.train_inputs = True
