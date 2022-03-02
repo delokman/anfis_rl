@@ -539,7 +539,11 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
+    validate = False
     epoch_number = 4
+    min_velocity_training_RMSE = 0.009
+    min_general_training_RMSE = 0.003
+
     for i in range(epoch_number):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
@@ -656,7 +660,7 @@ if __name__ == '__main__':
         train = True
         agent.train_inputs = True
 
-        if is_simulation:
+        if validate and is_simulation:
             validation_courses = {"Z Course": z_course(5, 15, 180, 15),
                                   "Straight Line": straight_line(), "Straight Line Mini": straight_line(n=10),
                                   "Curved line 1m 0.5m": curved_z(1, .5, 7), "Curved line 5m 1m": curved_z(5, 1, 7)}
@@ -690,17 +694,18 @@ if __name__ == '__main__':
                     scheduler2.step()
                 # sys.exit()
 
-            if is_simulation and i % 10 == 0:
-                for k, v in validation_courses.items():
-                    if isinstance(v, list):
-                        v = (v, SummaryWriter(f'{package_location}/runs/{name}/{k}'))
-                        validation_courses[k] = v
+            if validate:
+                if is_simulation and i % 10 == 0:
+                    for k, v in validation_courses.items():
+                        if isinstance(v, list):
+                            v = (v, SummaryWriter(f'{package_location}/runs/{name}/{k}'))
+                            validation_courses[k] = v
 
-                    agent.eval()
-                    path, val_summary = v
-                    epoch(i, agent, path, val_summary, checkpoint_saver, params, pauser, jackal, noise,
-                          train=False)
-                    agent.train()
+                        agent.eval()
+                        path, val_summary = v
+                        epoch(i, agent, path, val_summary, checkpoint_saver, params, pauser, jackal, noise,
+                              train=False)
+                        agent.train()
 
             summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], i)
             summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], i)
