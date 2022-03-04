@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from rl.utils import reward, reward2
+from rl.utils import reward, reward2, reward3
 from utils import reward_function_grid_visualization
 
 
@@ -71,6 +71,10 @@ if __name__ == '__main__':
     def reward_all2(target, dis, theta_lookahead, theta_recovery, theta_near, linear_vel, angular_vel):
         errors = np.array([target, dis, theta_lookahead, theta_recovery, theta_near])
         return reward2(errors, linear_vel, angular_vel, reward_scales)[0]
+
+    def reward_all3(target, dis, theta_lookahead, theta_recovery, theta_near, linear_vel, angular_vel):
+        errors = np.array([target, dis, theta_lookahead, theta_recovery, theta_near])
+        return reward3(errors, linear_vel, angular_vel, reward_scales)[0]
 
 
     fig = reward_function_grid_visualization(variable_ranges, variable_names, reward_all2)

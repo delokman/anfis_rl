@@ -161,7 +161,7 @@ def reward2(errors, linear_vel, angular_vel, params):
 
 def reward3(errors, linear_vel, angular_vel, params):
     target, dis, theta_lookahead, theta_recovery, theta_near = errors
-    dis = 1/(abs(dis) + 0.25)
+    dis = 1 / (abs(dis) + 0.25)
 
     return dis, [dis, theta_near, theta_recovery, linear_vel, angular_vel,
-                     theta_lookahead]
+                 theta_lookahead]

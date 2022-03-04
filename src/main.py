@@ -495,11 +495,13 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                                          theta_near_errors,
                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
                                          rule_weights, train)
-    # min_velocity_training_RMSE = 0.09
+    # min_velocity_training_RMSE = 0.30
     # if dist_error_rmse < min_velocity_training_RMSE:
     #     agent.train_velocity = False
+    #     print("velocity training off")
     # else:
     #     agent.train_velocity = True
+    #     print("velocity training on")
 
     return dist_error_mae, error
 
@@ -607,8 +609,7 @@ if __name__ == '__main__':
             'simulation': is_simulation,
             'actor_decay': scheduler2.gamma,
             'critic_decay': scheduler1.gamma,
-            'velocity_controlled': agent.actor.velocity,
-            "min_velocity_training_RMSE": min_velocity_training_RMSE
+            'velocity_controlled': agent.actor.velocity
         }
 
         reward_scales = {
@@ -650,7 +651,8 @@ if __name__ == '__main__':
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
 
-        error_threshold = 0.0075
+        #error_threshold = 0.03
+        error_threshold = 0.075
 
         train = True
         agent.train_inputs = True
