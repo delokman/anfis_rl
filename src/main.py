@@ -329,7 +329,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 print("Exceeded timeout returning to checkpoint")
 
                 print("Reloading from save,", checkpoint.checkpoint_location)
-                checkpoint.reload(agent)
+                #checkpoint.reload(agent)
                 error = True
                 break
 
