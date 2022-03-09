@@ -1,7 +1,8 @@
-from typing import List, Callable
+from typing import List, Callable, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from torch.utils.tensorboard.summary import hparams
@@ -91,7 +92,7 @@ class DoNothing:
 
 
 def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variable_names: List[str],
-                                       reward_function: Callable[..., float], res: int = 50) -> Figure:
+                                       reward_function: Callable[..., float], res: int = 50) -> Tuple[Figure, Figure]:
     """
     Implemented function to visualize the reward output of each of the variables, related with each other as contour plots
 
@@ -118,8 +119,16 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
 
     n_plots = len(variable_ranges)
     fig, axs = plt.subplots(nrows=n_plots, ncols=n_plots)
+    grads_fig, grads_axs = plt.subplots(nrows=n_plots, ncols=n_plots)
 
     empty = [0 for _ in range(n_plots)]
+
+    mins = []
+    maxes = []
+    contours = []
+    mins_g = []
+    maxes_g = []
+    contours_g = []
 
     for y in range(n_plots):
         for x in range(n_plots):
@@ -144,20 +153,75 @@ def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variab
                         data[i, j] += reward_function(*d)
 
             ax: Axes = axs[y, x]
-            # ax.text(0, 0, f"({x}, {y})")
-            ax.contourf(xx, yy, data, res, cmap='gray')
-            ax.contour(xx, yy, data, res // 5)
+
+            min_z = np.min(data)
+            max_z = np.max(data)
+
+            mins.append(min_z)
+            maxes.append(max_z)
+
+            c = ax.contourf(xx, yy, data, res, cmap='seismic')
+            contours.append(c)
+
+            # ax.contour(xx, yy, data, res // 5)
+
+            dx = (x_d[-1] - x_d[0]) / x_d.shape[0]
+            dy = (y_d[-1] - y_d[0]) / y_d.shape[0]
+
+            grad_reward_x, grad_reward_y = np.gradient(data, dx, dy)
+            grad_ax = grads_axs[y, x]
+
+            z = grad_reward_x + grad_reward_y
+
+            min_z = np.min(z)
+            max_z = np.max(z)
+
+            maxes_g.append(max_z)
+            mins_g.append(min_z)
+
+            c = grad_ax.contourf(xx, yy, z, res, cmap='coolwarm')
+            contours_g.append(c)
+
+            n = 5
+            skip = (slice(None, None, n), slice(None, None, n))
+
+            grad_ax.quiver(xx[skip], yy[skip], grad_reward_x[skip], grad_reward_y[skip], scale=None, scale_units='xy',
+                           angles='xy')
+
+            grad_ax: Axes
+            # grad_ax.pcolor(xx,yy, z ,vmin=-1, vmax=1)
 
             bot = False
             side = False
             if y == n_plots - 1:
                 bot = True
                 ax.set_xlabel(variable_names[x])
+                grad_ax.set_xlabel(variable_names[x])
             if x == 0:
                 side = True
                 ax.set_ylabel(variable_names[y])
-            ax.tick_params(labelbottom=bot, labelleft=side)
-            # ax.tick_params(labelbottom=False, labelleft=False)
+                grad_ax.set_ylabel(variable_names[y])
 
-    fig.tight_layout()
-    return fig
+            ax.tick_params(labelbottom=bot, labelleft=side)
+            fig: Figure
+            grad_ax.tick_params(labelbottom=bot, labelleft=side)
+
+    min_z = min(*mins, -0.01)
+    max_z = max(*maxes, 0.01)
+    divnorm = colors.TwoSlopeNorm(vmin=min_z, vcenter=0., vmax=max_z)
+
+    for c in contours:
+        c.set_norm(divnorm)
+
+    min_z = min(*mins_g, -0.01)
+    max_z = max(*maxes_g, 0.01)
+    divnorm_grads = colors.TwoSlopeNorm(vmin=min_z, vcenter=0., vmax=max_z)
+
+    for c in contours_g:
+        c.set_norm(divnorm_grads)
+
+    # grads_fig.subplots_adjust(.04, .052, .995, .983, .043, .057)
+    # fig.subplots_adjust(.04, .052, .995, .983, .043, .057)
+
+    # fig.tight_layout()
+    return fig, grads_fig
