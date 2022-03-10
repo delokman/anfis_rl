@@ -1,4 +1,4 @@
-﻿#! /usr/bin/env python
+#! /usr/bin/env python
 # coding=utf-8
 import copy
 import datetime
@@ -9,6 +9,8 @@ import traceback
 from typing import Tuple
 
 import matplotlib
+matplotlib.use('Agg')
+
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
@@ -18,8 +20,6 @@ from rl.checkpoint_storage import LowestCheckpoint
 from rl.noise import OUNoise
 from test_course import test_course3, hard_course, test_course2
 from utils import add_hparams, markdown_rule_table
-
-matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -492,7 +492,7 @@ if __name__ == '__main__':
             package_location = '/home/auvsl/python3_ws/src/anfis_rl'
         else:
             rospack = rospkg.RosPack()
-            package_location = rospack.get_path('anfis_rl')
+            package_location = rospack.get_path('anfis_rl2')
 
         print("Package Location:", package_location)
 
