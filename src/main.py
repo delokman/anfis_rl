@@ -328,8 +328,14 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     jackal.wait_for_publisher()
 
     with torch.no_grad():
-        jackal.linear_velocity = agent.actor.layer[
-            'consequent'].mamdani_defs_vel.get_fast().detach()  # params['linear_vel']
+        fast = agent.actor.layer[
+            'consequent'].mamdani_defs_vel.get_fast().detach()
+        med = agent.actor.layer[
+            'consequent'].mamdani_defs_vel.get_medium().detach()
+        slow = agent.actor.layer[
+            'consequent'].mamdani_defs_vel.get_slow().detach()
+
+        jackal.linear_velocity = min((fast + med + slow) / 3., 0.5)
         velocity = jackal.linear_velocity
 
         timeout_time = path.get_estimated_time(jackal.linear_velocity) * 1.5
