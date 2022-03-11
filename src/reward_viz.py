@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+
+plt.rcParams['mpl_toolkits.legacy_colorbar'] = False
 import numpy as np
 
-from rl.utils import reward, reward2, reward3
+from rl.utils import reward, reward3, reward4
 from utils import reward_function_grid_visualization
 
 
@@ -50,14 +52,16 @@ if __name__ == '__main__':
         'max_angular_vel': 4,
     }
 
+    n = 50
+
     variable_ranges = [
-        np.linspace(0., 1.),
-        np.linspace(-1., 1.),
-        np.linspace(-np.pi, np.pi),
-        np.linspace(-np.pi, np.pi),
-        np.linspace(-np.pi, np.pi),
-        np.linspace(0., 2.),
-        np.linspace(-4., 4.),
+        np.linspace(0., 1., num=n),
+        np.linspace(-1., 1., num=n),
+        np.linspace(-np.pi, np.pi, num=n),
+        np.linspace(-np.pi, np.pi, num=n),
+        np.linspace(-np.pi, np.pi, num=n),
+        np.linspace(0., 2., num=n),
+        np.linspace(-4., 4., num=n),
     ]
 
     variable_names = ["target", "dis", "theta_lookahead", "theta_recovery", "theta_near", "linear_vel", "angular_vel"]
@@ -70,14 +74,14 @@ if __name__ == '__main__':
 
     def reward_all2(target, dis, theta_lookahead, theta_recovery, theta_near, linear_vel, angular_vel):
         errors = np.array([target, dis, theta_lookahead, theta_recovery, theta_near])
-        return reward2(errors, linear_vel, angular_vel, reward_scales)[0]
+        return reward4(errors, linear_vel, angular_vel, reward_scales)[0]
+
 
     def reward_all3(target, dis, theta_lookahead, theta_recovery, theta_near, linear_vel, angular_vel):
         errors = np.array([target, dis, theta_lookahead, theta_recovery, theta_near])
         return reward3(errors, linear_vel, angular_vel, reward_scales)[0]
 
 
-    fig = reward_function_grid_visualization(variable_ranges, variable_names, reward_all2)
-    fig.subplots_adjust(.04, .052, .995, .983, .043, .057)
+    fig, grad_fig = reward_function_grid_visualization(variable_ranges, variable_names, reward_all2)
 
     plt.show()
