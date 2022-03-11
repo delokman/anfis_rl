@@ -1,6 +1,7 @@
 import random
 from collections import deque
 
+import kdtree
 import numpy as np
 
 
@@ -34,5 +35,36 @@ class Memory:
 
         return state_batch, action_batch, reward_batch, next_state_batch, done_batch
 
+    def clear(self):
+        self.buffer.clear()
+
     def __len__(self):
         return len(self.buffer)
+
+
+class KDTreeMemory(Memory):
+    def __init__(self, max_size, n_similar=100, dim=4):
+        super().__init__(max_size)
+        self.n_similar = n_similar
+        self.dim = 4
+
+        self.tree = kdtree.create(dimensions=dim)
+
+    def push(self, state, action, reward, next_state, done):
+        target, dis, theta_lookahead, theta_recovery, theta_near = state
+        n = [np.abs(dis), np.abs(theta_lookahead) / np.pi, np.abs(theta_recovery) / np.pi, np.abs(theta_near) / np.pi]
+
+        out = self.tree.search_nn_dist(n, .025)
+
+        submit = len(out) <= self.n_similar
+
+        if submit:
+            self.tree.add(n)
+            super(KDTreeMemory, self).push(state, action, reward, next_state, done)
+        # else:
+        #     dists = np.linalg.norm(np.array(n) - np.array(out), axis=1) ** 2
+        #     print(n, dists)
+
+    def clear(self):
+        self.tree = kdtree.create(dimensions=self.dim)
+        super(KDTreeMemory, self).clear()
