@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import random
+import time
 import traceback
 from typing import Tuple
 
@@ -260,7 +261,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     pauser.wait_for_publisher()
 
     rate = rospy.Rate(60)
-
+    #rate_update = rospy.Rate(14)
+    rate_update = rospy.Rate(60)
     jackal.clear_pose()
     path = Path(path)
     print("Path Length", path.estimated_path_length)
@@ -311,6 +313,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
     with tqdm(total=path.path_length) as pbar:
         while not rospy.is_shutdown():
+            s = time.time()
+
             while pauser.pause:
                 if not rospy.is_shutdown():
                     sleep_rate.sleep()
@@ -329,7 +333,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                 print("Exceeded timeout returning to checkpoint")
 
                 print("Reloading from save,", checkpoint.checkpoint_location)
-                #checkpoint.reload(agent)
+                checkpoint.reload(agent)
                 error = True
                 break
 
@@ -412,10 +416,22 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
                         grad_distribution['all'].append(p.grad)
                         grad_distribution[name].append(p.grad)
 
-            update_step += 1
+
             # print(control_law)
             jackal.pub_motion()
-            rate.sleep()
+
+            if update_step % params['update_rate'] == 0 and train:
+                rate_update.sleep()
+                rate.last_time = rospy.rostime.get_rostime()
+            else:
+                rate.sleep()
+                rate_update.last_time = rospy.rostime.get_rostime()
+
+            e = time.time()
+
+            hz = 1 / (e - s)
+            print(hz)
+            update_step += 1
 
     del rospy.core._client_shutdown_hooks[-1]
 
@@ -435,8 +451,10 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     min_velocity_training_RMSE = 0.09
     if dist_error_rmse < min_velocity_training_RMSE:
         agent.train_velocity = False
+        print("train velocity false")
     else:
         agent.train_velocity = True
+        print("train velocity true")
 
     return dist_error_mae, error
 
