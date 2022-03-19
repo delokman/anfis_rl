@@ -684,8 +684,8 @@ if __name__ == '__main__':
 
         for i in range(params['epoch_nums']):
             summary.add_scalar('model/learning', train, i)
-            mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
-                                          global_step, train=train)
+            mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal,
+                                          global_step, noise, train=train)
 
             if error_flag:
                 agent.memory = copy.deepcopy(memory_backup)
