@@ -94,6 +94,7 @@ class Jackal:
         self.twist = Twist()
 
     def clear_pose(self):
+        del self.robot_path
         self.robot_path = []
 
     def inverse_transform_poses(self, path):
