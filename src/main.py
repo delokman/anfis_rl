@@ -182,7 +182,9 @@ def summary_and_logging(summary: SummaryWriter, agent: DDPGAgent, params: dict, 
         fig, ax = plt.subplots()
         ax.set_aspect('equal')
         ax.plot(test_path[:-1, 0], test_path[:-1, 1])
+        del test_path
         ax.plot(robot_path[:, 0], robot_path[:, 1])
+        del robot_path
         fig.tight_layout()
 
         distance_errors = np.asarray(distance_errors)
@@ -510,8 +512,9 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
     if show_gradients:
         for name, values in grad_distribution.items():
-            dist = torch.stack(values)
+            dist = torch.stack(values).detach()
             summary.add_histogram(f"Gradients/{name}", dist, global_step=i)
+            del dist
 
     dist_error_rmse, dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
                                          theta_near_errors,
@@ -524,6 +527,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     else:
         agent.train_velocity = True
         print("train velocity true")
+
+    del jackal, path, distance_errors, theta_far_errors, theta_near_errors, rewards_cummulative, yaw_rates, velocities, reward_components, rule_weights
 
     return dist_error_mae, error
 
