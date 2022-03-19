@@ -6,7 +6,7 @@ import json
 import os
 import random
 import traceback
-from typing import Tuple
+from typing import Tuple, List
 
 import matplotlib
 import torch
@@ -292,12 +292,14 @@ def shutdown(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jac
 
 
 def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoint: LowestCheckpoint, params: dict,
-          pauser: BluetoothEStop, jackal: Jackal, noise: OUNoise = None, show_gradients: bool = False,
+          pauser: BluetoothEStop, jackal: Jackal, global_step: List[int], noise: OUNoise = None,
+          show_gradients: bool = False,
           train: bool = True) -> Tuple[float, bool]:
     """
     Runs a full lap of the path, defined as an epoch using the agent as the controller
 
     Args:
+        global_step: the total number of steps of the training loop
         i: epoch number
         agent: the DDPG model
         path: the path to travel through
@@ -475,6 +477,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
             reward_components.append(comps)
 
             add_to_memory(path_errors, rewards, (control_law, velocity), agent, done)
+            summary.add_scalar("Update/memory_size", len(agent.memory), global_step=global_step[0])
+            global_step[0] += 1
             if update_step % params['update_rate'] == 0 and train:
                 agent_update(agent, params['batch_size'], summary)
 
@@ -676,10 +680,12 @@ if __name__ == '__main__':
             for k, v in validation_courses.items():
                 extend_path(v)
 
+        global_step = [0]
+
         for i in range(params['epoch_nums']):
             summary.add_scalar('model/learning', train, i)
             mae_error, error_flag = epoch(i, agent, test_path, summary, checkpoint_saver, params, pauser, jackal, noise,
-                                          train=train)
+                                          global_step, train=train)
 
             if error_flag:
                 agent.memory = copy.deepcopy(memory_backup)
