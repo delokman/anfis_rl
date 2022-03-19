@@ -115,12 +115,14 @@ def plot_fuzzy_consequent(summary, model, t):
             s = 1
 
             for key, value in values.items():
+                value = value.item()
                 ax.plot([value - 1 / s, value, value + 1 / s], [0, 1, 0], label=consque.names[key])
 
             ax.legend()
 
             summary.add_figure("Consequent/Mamdani", fig, t)
 
+            plt.close(fig)
             if model.velocity:
                 consque = model.layer['consequent'].mamdani_defs_vel
                 consque.cache()
@@ -132,11 +134,13 @@ def plot_fuzzy_consequent(summary, model, t):
                 s = 1
 
                 for key, value in values.items():
+                    value = value.item()
                     ax.plot([value - 1 / s, value, value + 1 / s], [0, 1, 0], label=consque.names[key])
 
                 ax.legend()
 
                 summary.add_figure("Consequent/Velocity Mamdani", fig, t)
+                plt.close(fig)
         else:
             coeff = model.layer['consequent'].coeff
             coeff, bias = coeff[:, :, :-1], coeff[:, :, -1]
@@ -160,6 +164,7 @@ def plot_fuzzy_consequent(summary, model, t):
                 fig.colorbar(c, ax=ax)
 
                 summary.add_figure(f"Consequent/{name}", fig, t)
+                plt.close(fig)
 
 
 def plot_fuzzy_membership_functions(summary, model, t, n=1000):
@@ -183,6 +188,7 @@ def plot_fuzzy_membership_functions(summary, model, t, n=1000):
             ax.legend()
 
             summary.add_figure(f"Membership/{var_name}", fig, t)
+            plt.close(fig)
 
 
 def save_fuzzy_membership_functions(model, file_name='mfs.txt'):
