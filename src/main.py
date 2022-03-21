@@ -13,12 +13,12 @@ import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 
-from new_test_courses import z_course, straight_line, curved_z
-from pauser import BluetoothEStop
+from gazebo_utils.new_test_courses import z_course, straight_line, curved_z
+from gazebo_utils.pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
 from rl.noise import OUNoise
-from test_course import test_course3
-from utils import add_hparams, markdown_rule_table
+from gazebo_utils.test_course import test_course3
+from gazebo_utils.utils import add_hparams, markdown_rule_table
 
 matplotlib.use('Agg')
 
@@ -32,11 +32,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, plot_fuzzy_variables, \
     plot_critic_weights
-from jackal import Jackal
-from path import Path
+from gazebo_utils.jackal import Jackal
+from gazebo_utils.path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
-from rl.utils import fuzzy_error, reward2, reward
+from rl.utils import fuzzy_error, reward3
 
 import rospkg
 

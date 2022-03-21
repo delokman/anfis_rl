@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.linalg import lstsq
 
-from utils import DoNothing
+from gazebo_utils.utils import DoNothing
 
 dtype = torch.float
 

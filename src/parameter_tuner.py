@@ -1,4 +1,3 @@
-import datetime
 import json
 import os
 from itertools import product
@@ -9,14 +8,14 @@ from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.tensorboard import SummaryWriter
 
 from anfis.utils import plot_critic_weights
-from jackal import Jackal
+from gazebo_utils.jackal import Jackal
+from gazebo_utils.pauser import BluetoothEStop
+from gazebo_utils.test_course import test_course3
+from gazebo_utils.utils import markdown_rule_table
 from main import extend_path, epoch, plot_anfis_data
-from pauser import BluetoothEStop
 from rl.checkpoint_storage import LowestCheckpoint
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import many_error_predefined_anfis_model
-from test_course import test_course3
-from utils import markdown_rule_table
 
 
 def sequence(parameters, path):

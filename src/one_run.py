@@ -12,9 +12,9 @@ import traceback
 import matplotlib
 from tqdm import tqdm
 
+from gazebo_utils.pauser import BluetoothEStop
+from gazebo_utils.utils import markdown_rule_table
 from main import is_gazebo_simulation, extend_path, plot_anfis_data, reset_world
-from pauser import BluetoothEStop
-from utils import markdown_rule_table
 
 matplotlib.use('Agg')
 
@@ -26,12 +26,12 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from anfis.utils import plot_critic_weights
-from jackal import Jackal
-from path import Path
+from gazebo_utils.jackal import Jackal
+from gazebo_utils.path import Path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model
 from rl.utils import fuzzy_error, reward
-from test_course import test_course, test_course2, hard_course, test_course3, test_8_shape
+from gazebo_utils.test_course import test_course, test_course2, hard_course, test_course3, test_8_shape
 
 import rospkg
 

@@ -4,7 +4,7 @@ plt.rcParams['mpl_toolkits.legacy_colorbar'] = False
 import numpy as np
 
 from rl.utils import reward, reward3, reward4
-from utils import reward_function_grid_visualization
+from gazebo_utils.utils import reward_function_grid_visualization
 
 
 def reward_new(errors, linear_vel, angular_vel, params):

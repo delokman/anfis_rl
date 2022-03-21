@@ -18,7 +18,7 @@ from anfis.antecedent_layer import AntecedentLayer, MamdaniAntecedentLayer
 from anfis.consequent_layer import ConsequentLayer, SymmetricWeightsConsequentLayer, ConsequentLayerType, \
     PlainConsequentLayer, MamdaniConsequentLayer
 from anfis.fuzzy_layer import JointFuzzifyLayer
-from utils import DoNothing
+from gazebo_utils.utils import DoNothing
 
 dtype = torch.float
 

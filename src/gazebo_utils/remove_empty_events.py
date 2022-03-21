@@ -36,6 +36,8 @@ for folder_name in directories:
 
     num_data_threshold = 25
 
+    exit_ = False
+
     try:
         for event in my_summary_iterator(event_file):
             summary: Summary = event.summary
@@ -46,6 +48,11 @@ for folder_name in directories:
                     # print(event)
                     # print(value.simple_value)
                     counter += 1
+                if counter > num_data_threshold:
+                    exit_ = True
+                    break
+            if exit_:
+                break
     except DataLossError as e:
         print("Data loss", e)
         error = True

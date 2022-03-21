@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from utils import wraptopi
+from gazebo_utils.utils import wraptopi
 
 
 def fuzzy_error(curr, tar, future, robot):
