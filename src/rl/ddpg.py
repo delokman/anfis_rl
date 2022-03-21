@@ -109,6 +109,29 @@ class DDPGAgent(torch.nn.Module):
         self._train_velocity = True
         self._train_angular = True
 
+        for p in self.actor_target.parameters():
+            p.requires_grad = False
+
+        for p in self.critic_target.parameters():
+            p.requires_grad = False
+
+        self.compare_models(self.actor, self.actor_target)
+        self.compare_models(self.critic, self.critic_target)
+
+    def compare_models(self, model_1, model_2):
+        models_differ = 0
+        for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+            if torch.equal(key_item_1[1], key_item_2[1]):
+                pass
+            else:
+                models_differ += 1
+                if (key_item_1[0] == key_item_2[0]):
+                    print('Mismtach found at', key_item_1[0])
+                else:
+                    raise Exception
+        if models_differ == 0:
+            print('Models match perfectly! :)')
+
     @property
     def train_inputs(self):
         return self._train_inputs
@@ -218,6 +241,9 @@ class DDPGAgent(torch.nn.Module):
         # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.grad_clip)
         self.critic_optimizer.step()
 
+        for p in self.critic.parameters():
+            p.requires_grad = False
+
         # Actor loss
         policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
         # update networks
@@ -230,6 +256,9 @@ class DDPGAgent(torch.nn.Module):
 
         # torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.grad_clip)
         self.actor_optimizer.step()
+
+        for p in self.critic.parameters():
+            p.requires_grad = True
 
         # update target networks
         self.soft_update(self.actor_target, self.actor)
