@@ -1,0 +1,14 @@
+<launch>
+    <!-- Launch Gazebo with the specified world -->
+    <arg name="gui" default="true"/>
+    <arg name="ns" default="jackal0"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" value="$(arg gui)"/>
+    </include>
+
+    <!-- Spawn the robot. -->
+    <include file="$(find multi_jackal_base)/launch/jackal_base.launch">
+        <arg name="ns" value="$(arg ns)"/>
+    </include>
+</launch>
