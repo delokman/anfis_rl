@@ -4,11 +4,13 @@ import signal
 import subprocess
 # import roslaunch
 import sys
-import time
 
 import gym
 import rospy
-from rosgraph_msgs.msg import Clock
+
+
+# import time
+# from rosgraph_msgs.msg import Clock
 
 
 class GazeboEnv(gym.Env):
@@ -17,7 +19,7 @@ class GazeboEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, launchfile, ros_path=None, bash=True, arguments=tuple()):
-        self.last_clock_msg = Clock()
+        # self.last_clock_msg = Clock()
 
         random_number = random.randint(10000, 15000)
         # self.port = "11311"#str(random_number) #os.environ["ROS_PORT_SIM"]
@@ -30,8 +32,8 @@ class GazeboEnv(gym.Env):
         #
         # self.ros_master_uri = os.environ["ROS_MASTER_URI"];
 
-        print("ROS_MASTER_URI=http://localhost:" + self.port + "\n")
-        print("GAZEBO_MASTER_URI=http://localhost:" + self.port_gazebo + "\n")
+        print("export ROS_MASTER_URI=http://localhost:" + self.port)
+        print("export GAZEBO_MASTER_URI=http://localhost:" + self.port_gazebo)
 
         # self.port = os.environ.get("ROS_PORT_SIM", "11311")
         if not ros_path:
@@ -86,20 +88,20 @@ class GazeboEnv(gym.Env):
         rospy.init_node('gym', anonymous=True)
 
         ################################################################################################################
-        r = rospy.Rate(1)
-        self.clock_sub = rospy.Subscriber('/clock', Clock, self.callback, queue_size=1000000)
-        while not rospy.is_shutdown():
-            # print("initialization: ", rospy.rostime.is_rostime_initialized())
-            # print("Wallclock: ", rospy.rostime.is_wallclock())
-            # print("Time: ", time.time())
-            # print("Rospyclock: ", rospy.rostime.get_rostime().secs)
-            # # print("/clock: ", str(self.last_clock_msg))
-            # last_ros_time_ = self.last_clock_msg
-            # print("Clock:", last_ros_time_)
-            # print("Waiting for synch with ROS clock")
-            # if wallclock == False:
-            #     break
-            r.sleep()
+        # r = rospy.Rate(1)
+        # self.clock_sub = rospy.Subscriber('/clock', Clock, self.callback, queue_size=1000000)
+        # while not rospy.is_shutdown():
+        # print("initialization: ", rospy.rostime.is_rostime_initialized())
+        # print("Wallclock: ", rospy.rostime.is_wallclock())
+        # print("Time: ", time.time())
+        # print("Rospyclock: ", rospy.rostime.get_rostime().secs)
+        # # print("/clock: ", str(self.last_clock_msg))
+        # last_ros_time_ = self.last_clock_msg
+        # print("Clock:", last_ros_time_)
+        # print("Waiting for synch with ROS clock")
+        # if wallclock == False:
+        #     break
+        # r.sleep()
         ################################################################################################################
 
     def callback(self, message):
@@ -161,7 +163,7 @@ class GazeboEnv(gym.Env):
         if roscore_count > 0:
             os.system("killall -9 roscore")
 
-        if (gzclient_count or gzserver_count or roscore_count or rosmaster_count > 0):
+        if gzclient_count or gzserver_count or roscore_count or rosmaster_count > 0:
             os.wait()
 
     def _configure(self):
