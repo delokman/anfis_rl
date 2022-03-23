@@ -10,5 +10,6 @@
     <!-- Spawn the robot. -->
     <include file="$(find multi_jackal_base)/launch/jackal_base.launch">
         <arg name="ns" value="$(arg ns)"/>
+        <arg name="z" value="0.065500"/>
     </include>
 </launch>
