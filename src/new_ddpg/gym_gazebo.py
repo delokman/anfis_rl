@@ -7,10 +7,9 @@ import sys
 
 import gym
 import rospy
-
-
 # import time
 # from rosgraph_msgs.msg import Clock
+from gym.utils import seeding
 
 
 class GazeboEnv(gym.Env):
@@ -21,6 +20,7 @@ class GazeboEnv(gym.Env):
     def __init__(self, launchfile, ros_path=None, bash=True, arguments=tuple()):
         # self.last_clock_msg = Clock()
 
+        self.np_random = None
         random_number = random.randint(10000, 15000)
         # self.port = "11311"#str(random_number) #os.environ["ROS_PORT_SIM"]
         # self.port_gazebo = "11345"#str(random_number+1) #os.environ["ROS_PORT_SIM"]
@@ -173,11 +173,9 @@ class GazeboEnv(gym.Env):
         # Maybe set the Real Time Factor?
         pass
 
-    def _seed(self):
-
-        # TODO
-        # From OpenAI API: Sets the seed for this env's random number generator(s)
-        pass
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
 
 
 if __name__ == '__main__':
