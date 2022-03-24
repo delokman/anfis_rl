@@ -17,6 +17,9 @@ from rl.utils import fuzzy_error
 
 
 class JackalState:
+    MAX_SPEED = 2
+    MAX_ANG_SPEED = 4
+
     def __init__(self, x=0, y=0, angle=0, linear_speed=0, angular_speed=0):
         self.y = y
         self.x = x
@@ -81,6 +84,11 @@ class GazeboJackalEnv(GazeboEnv):
         self.stop = False
         self.read_first_data = 0
 
+        self.max_time = self.path.get_estimated_time(JackalState.MAX_SPEED / 2)
+
+        self.start_time = 0
+        self.step_iterator = 0
+
         self.temp_robot = JackalState()
 
         self._seed()
@@ -114,12 +122,14 @@ class GazeboJackalEnv(GazeboEnv):
         return [seed]
 
     def step(self, action):
+        if self.step_iterator == 0:
+            self.start_time = rospy.get_time()
 
-        rospy.wait_for_service('/gazebo/unpause_physics')
-        try:
-            self.unpause()
-        except (rospy.ServiceException) as e:
-            print("/gazebo/unpause_physics service call failed")
+            rospy.wait_for_service('/gazebo/unpause_physics')
+            try:
+                self.unpause()
+            except (rospy.ServiceException) as e:
+                print("/gazebo/unpause_physics service call failed")
 
         lin, ang = action
 
@@ -128,17 +138,24 @@ class GazeboJackalEnv(GazeboEnv):
         vel_cmd.angular.z = ang
         self.vel_pub.publish(vel_cmd)
 
-        rospy.wait_for_service('/gazebo/pause_physics')
-        try:
-            # resp_pause = pause.call()
-            self.pause()
-        except (rospy.ServiceException) as e:
-            print("/gazebo/pause_physics service call failed")
+        # rospy.wait_for_service('/gazebo/pause_physics')
+        # try:
+        #     # resp_pause = pause.call()
+        #     self.pause()
+        # except (rospy.ServiceException) as e:
+        #     print("/gazebo/pause_physics service call failed")
 
         state, done = self.take_observation()
 
+        dt = rospy.get_time() - self.start_time
+
+        if dt > self.max_time:
+            done = True
+            print("DONE!")
+
         reward = self.reward_fnc(state, (lin, ang), self.config)
 
+        self.step_iterator += 1
         return state, reward, done, {}
 
     def reset(self):
@@ -183,6 +200,8 @@ class GazeboJackalEnv(GazeboEnv):
         self.stop = False
 
         self.path.set_initial_state(self.robot)
+        self.step_iterator = 0
+        self.start_time = 0
 
         state = self.take_observation()
         return state
