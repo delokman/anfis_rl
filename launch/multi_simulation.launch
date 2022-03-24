@@ -2,14 +2,21 @@
     <!-- Launch Gazebo with the specified world -->
     <arg name="gui" default="true"/>
     <arg name="ns" default="jackal0"/>
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="createWorld" default="true"/>
 
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="gui" value="$(arg gui)"/>
-    </include>
+    <group if="$(arg createWorld)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="gui" value="$(arg gui)"/>
+        </include>
+    </group>
 
     <!-- Spawn the robot. -->
     <include file="$(find multi_jackal_base)/launch/jackal_base.launch">
         <arg name="ns" value="$(arg ns)"/>
         <arg name="z" value="0.065500"/>
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
     </include>
 </launch>
