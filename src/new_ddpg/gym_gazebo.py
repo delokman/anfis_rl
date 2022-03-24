@@ -104,16 +104,16 @@ class GazeboEnv(gym.Env):
         # r.sleep()
         ################################################################################################################
 
-    def callback(self, message):
-        """
-        Callback method for the subscriber of the clock topic
-        :param message:
-        :return:
-        """
-        # self.last_clock_msg = int(str(message.clock.secs) + str(message.clock.nsecs)) / 1e6
-        # print("Message", message)
-        self.last_clock_msg = message
-        # print("Message", message)
+    # def callback(self, message):
+    #     """
+    #     Callback method for the subscriber of the clock topic
+    #     :param message:
+    #     :return:
+    #     """
+    #     self.last_clock_msg = int(str(message.clock.secs) + str(message.clock.nsecs)) / 1e6
+    #     print("Message", message)
+    #     self.last_clock_msg = message
+    #     print("Message", message)
 
     def step(self, action):
 
@@ -126,7 +126,7 @@ class GazeboEnv(gym.Env):
         # Implemented in subclass
         raise NotImplementedError
 
-    def _render(self, mode="human", close=False):
+    def render(self, mode="human", close=False):
 
         if close:
             tmp = os.popen("ps -Af").read()
@@ -145,7 +145,7 @@ class GazeboEnv(gym.Env):
         else:
             self.gzclient_pid = 0
 
-    def _close(self):
+    def close(self):
 
         # Kill gzclient, gzserver and roscore
         tmp = os.popen("ps -Af").read()
