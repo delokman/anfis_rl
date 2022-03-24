@@ -17,23 +17,29 @@ class GazeboEnv(gym.Env):
     """
     metadata = {'render.modes': ['human']}
 
+    INITIALIZED = False
+    PORT = ""
+    PORT_GAZEBO = ""
+
     def __init__(self, launchfile, ros_path=None, bash=True, arguments=tuple()):
         # self.last_clock_msg = Clock()
 
         self.np_random = None
-        random_number = random.randint(10000, 15000)
-        # self.port = "11311"#str(random_number) #os.environ["ROS_PORT_SIM"]
-        # self.port_gazebo = "11345"#str(random_number+1) #os.environ["ROS_PORT_SIM"]
-        self.port = str(random_number)  # os.environ["ROS_PORT_SIM"]
-        self.port_gazebo = str(random_number + 1)  # os.environ["ROS_PORT_SIM"]
 
-        os.environ["ROS_MASTER_URI"] = "http://localhost:" + self.port
-        os.environ["GAZEBO_MASTER_URI"] = "http://localhost:" + self.port_gazebo
-        #
-        # self.ros_master_uri = os.environ["ROS_MASTER_URI"];
+        if not GazeboEnv.INITIALIZED:
+            random_number = random.randint(10000, 15000)
+            # self.port = "11311"#str(random_number) #os.environ["ROS_PORT_SIM"]
+            # self.port_gazebo = "11345"#str(random_number+1) #os.environ["ROS_PORT_SIM"]
+            GazeboEnv.PORT = str(random_number)  # os.environ["ROS_PORT_SIM"]
+            GazeboEnv.PORT_GAZEBO = str(random_number + 1)  # os.environ["ROS_PORT_SIM"]
 
-        print("export ROS_MASTER_URI=http://localhost:" + self.port)
-        print("export GAZEBO_MASTER_URI=http://localhost:" + self.port_gazebo)
+            os.environ["ROS_MASTER_URI"] = "http://localhost:" + GazeboEnv.PORT
+            os.environ["GAZEBO_MASTER_URI"] = "http://localhost:" + GazeboEnv.PORT_GAZEBO
+            #
+            # self.ros_master_uri = os.environ["ROS_MASTER_URI"];
+
+            print("export ROS_MASTER_URI=http://localhost:" + GazeboEnv.PORT)
+            print("export GAZEBO_MASTER_URI=http://localhost:" + GazeboEnv.PORT_GAZEBO)
 
         # self.port = os.environ.get("ROS_PORT_SIM", "11311")
         if not ros_path:
@@ -54,7 +60,9 @@ class GazeboEnv(gym.Env):
             raise IOError("File " + fullpath + " does not exist")
 
         if bash:
-            command = ['/bin/bash', fullpath, self.port, *map(str, arguments)]
+            createGazebo = "0" if GazeboEnv.INITIALIZED else "1"
+
+            command = ['/bin/bash', fullpath, GazeboEnv.PORT, createGazebo, *map(str, arguments)]
 
             print("Running", " ".join(command))
 
@@ -73,19 +81,21 @@ class GazeboEnv(gym.Env):
                        '_': '/usr/bin/python',
                        'ROSLISP_PACKAGE_DIRECTORIES': '/home/auvsl/catkin_ws/devel/share/common-lisp',
                        'ROS_ETC_DIR': '/opt/ros/melodic/etc/ros', 'ROS_VERSION': '1',
-                       "ROS_MASTER_URI": "http://localhost:" + self.port,
-                       "GAZEBO_MASTER_URI": "http://localhost:" + self.port_gazebo}
+                       "ROS_MASTER_URI": "http://localhost:" + GazeboEnv.PORT,
+                       "GAZEBO_MASTER_URI": "http://localhost:" + GazeboEnv.PORT_GAZEBO}
 
             self._roslaunch = subprocess.Popen(command, executable='/bin/bash', env=environ)
         else:
             self._roslaunch = subprocess.Popen(
-                [sys.executable, os.path.join(ros_path, b"roslaunch"), "-p", self.port, fullpath])
+                [sys.executable, os.path.join(ros_path, b"roslaunch"), "-p", GazeboEnv.PORT, fullpath])
         print("Gazebo launched!")
 
         self.gzclient_pid = 0
 
-        # Launch the simulation with the given launchfile name
-        rospy.init_node('gym', anonymous=True)
+        if not GazeboEnv.INITIALIZED:
+            # Launch the simulation with the given launchfile name
+            rospy.init_node('gym', anonymous=True)
+            GazeboEnv.INITIALIZED = True
 
         ################################################################################################################
         # r = rospy.Rate(1)
