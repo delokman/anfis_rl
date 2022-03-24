@@ -105,7 +105,7 @@ class GazeboJackalEnv(GazeboEnv):
         curr, targ, fut, done = self.path.get_trajectory(self.temp_robot)
         errors = fuzzy_error(curr, targ, fut, self.temp_robot)
 
-        print(self.read_first_data, errors)
+        # print(self.read_first_data, errors)
 
         return errors, done
 
