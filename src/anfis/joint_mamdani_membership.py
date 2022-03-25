@@ -61,7 +61,7 @@ class JointSymmetricTriangleMembership(JointMamdaniMembership):
         super().__init__()
 
         if constant_center:
-            self.center = torch.tensor(center, dtype=dtype, requires_grad=False)
+            self.register_buffer("center", torch.tensor(center, dtype=dtype, requires_grad=False))
         else:
             self.register_parameter('center', _mk_param(center, dtype=dtype))
 
@@ -137,7 +137,7 @@ class JointSymmetric9TriangleMembership(JointMamdaniMembership):
         super().__init__()
 
         if constant_center:
-            self.center = torch.tensor(center, dtype=dtype, requires_grad=False)
+            self.register_buffer("center", torch.tensor(center, dtype=dtype, requires_grad=False))
         else:
             self.register_parameter('center', _mk_param(center, dtype=dtype))
 

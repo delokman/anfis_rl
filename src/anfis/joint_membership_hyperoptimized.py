@@ -44,8 +44,8 @@ class JointMembershipHyperOptimized(JointMembership):
         # torch.clamp_max_(y_pred, 1)
 
         if self.padding > 0:
-            y_pred = torch.cat([y_pred,
-                                torch.zeros(x.shape[0], self.padding, device='cuda' if self.is_cuda else 'cpu')], dim=1)
+            self.zeroes = torch.zeros(x.shape[0], self.padding, device=y_pred.device)
+            y_pred = torch.cat([y_pred, self.zeroes], dim=1)
 
         return y_pred
 
@@ -66,10 +66,10 @@ class JointTrapMembershipV3(JointMembershipHyperOptimized):
 
     def __init__(self, center, slope, center_width, side_width, constant_center=False, min_slope=0.01):
         super().__init__()
-        self.slope_constraint = torch.tensor(min_slope, dtype=self.required_dtype())
+        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
-            self.center = torch.tensor(center, dtype=self.required_dtype(), requires_grad=False)
+            self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
         else:
             self.register_parameter('center', _mk_param(center, dtype=self.required_dtype()))
 
@@ -77,9 +77,9 @@ class JointTrapMembershipV3(JointMembershipHyperOptimized):
         self.register_parameter('center_width', _mk_param(center_width, dtype=self.required_dtype()))
         self.register_parameter('side_width', _mk_param(side_width, dtype=self.required_dtype()))
 
-        self.one = torch.tensor(1, dtype=self.required_dtype())
-        self.n_one = torch.tensor(-1, dtype=self.required_dtype())
-        self.two = torch.tensor(2, dtype=self.required_dtype())
+        self.register_buffer("one", torch.tensor(1, dtype=self.required_dtype()))
+        self.register_buffer("n_one",  torch.tensor(-1, dtype=self.required_dtype()))
+        self.register_buffer("two", torch.tensor(2, dtype=self.required_dtype()))
 
         # FIXME Lol cheeky way to add backwards compatability
         mf_definitions = OrderedDict()
@@ -168,10 +168,10 @@ class JointSingleConstrainedEdgeMembershipV2(JointMembershipHyperOptimized):
 
     def __init__(self, center, slope, constant_center=False, min_slope=0.01):
         super().__init__()
-        self.slope_constraint = torch.tensor(min_slope, dtype=self.required_dtype())
+        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
-            self.center = torch.tensor(center, dtype=self.required_dtype(), requires_grad=False)
+            self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
         else:
             self.register_parameter('center', _mk_param(center, dtype=self.required_dtype()))
 
@@ -225,10 +225,10 @@ class Joint7TrapMembershipV2(JointMembershipHyperOptimized):
     def __init__(self, center, slope, center_width, side_width, super_side_width, constant_center=False,
                  min_slope=0.01):
         super().__init__()
-        self.slope_constraint = torch.tensor(min_slope, dtype=self.required_dtype())
+        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
-            self.center = torch.tensor(center, dtype=self.required_dtype(), requires_grad=False)
+            self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
         else:
             self.register_parameter('center', _mk_param(center, dtype=self.required_dtype()))
 
@@ -237,9 +237,9 @@ class Joint7TrapMembershipV2(JointMembershipHyperOptimized):
         self.register_parameter('side_width', _mk_param(side_width, dtype=self.required_dtype()))
         self.register_parameter('super_side_width', _mk_param(super_side_width, dtype=self.required_dtype()))
 
-        self.one = torch.tensor(1, dtype=self.required_dtype())
-        self.n_one = torch.tensor(-1, dtype=self.required_dtype())
-        self.two = torch.tensor(2, dtype=self.required_dtype())
+        self.register_buffer("one", torch.tensor(1, dtype=self.required_dtype()))
+        self.register_buffer("n_one",  torch.tensor(-1, dtype=self.required_dtype()))
+        self.register_buffer("two", torch.tensor(2, dtype=self.required_dtype()))
 
         # FIXME Lol cheeky way to add backwards compatability
         mf_definitions = OrderedDict()
