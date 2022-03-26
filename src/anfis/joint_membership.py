@@ -127,6 +127,7 @@ class JointMembership(ABC, torch.nn.Module):
         super().__init__()
         self.padding = 0
         self.is_cuda = False
+        self.register_buffer("zeroes", torch.tensor([]))
 
     @property
     def num_mfs(self):
