@@ -147,6 +147,7 @@ class GazeboJackalEnv(GazeboEnv):
         return [seed]
 
     def step(self, action):
+        rate = rospy.Rate(50)
         if self.step_iterator == 0:
             self.start_time = rospy.get_time()
 
@@ -160,7 +161,7 @@ class GazeboJackalEnv(GazeboEnv):
                 print("/gazebo/unpause_physics service call failed")
         GazeboJackalEnv.RUNNING = True
 
-        lin, ang = action
+        ang, lin = action
 
         vel_cmd = Twist()
         vel_cmd.linear.x = lin
@@ -178,13 +179,18 @@ class GazeboJackalEnv(GazeboEnv):
 
         dt = rospy.get_time() - self.start_time
 
-        if dt > self.max_time:
+        # print(self.max_time, dt, state[1])
+
+        if dt > self.max_time or abs(state[1]) > 2:
             done = True
             print("DONE!")
 
-        reward = self.reward_fnc(state, (lin, ang), self.config)
+        reward, components = self.reward_fnc(state, lin, ang, self.config)
 
         self.step_iterator += 1
+
+        rate.sleep()
+
         return state, reward, done, {}
 
     def reset(self):
