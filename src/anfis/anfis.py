@@ -240,6 +240,9 @@ class JointAnfisNet(torch.nn.Module):
                 rstr.append(' ' * 9 + 'THEN {}'.format(crow.tolist()))
             return '\n'.join(rstr)
 
+    def set_training_mode(self, mode):
+        self.train(mode)
+
     def forward(self, x):
         """
             Forward pass: run x thru the five layers and return the y values.
