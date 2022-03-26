@@ -1,12 +1,12 @@
 import random
-import time
 
 import numpy as np
 import rospy
+from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist
 from gym import spaces
 from gym.utils import seeding
-from nav_msgs.msg import Odometry
+from robot_localization.srv import SetPose
 from std_srvs.srv import Empty
 from tf.transformations import euler_from_quaternion
 
@@ -14,6 +14,23 @@ from gazebo_utils.path import Path, extend_path
 from gazebo_utils.test_course import test_course3
 from new_ddpg.gym_gazebo import GazeboEnv
 from rl.utils import fuzzy_error
+
+
+def call_service(service_name: str, service_type, data):
+    """
+    Calls a specific ROS Service
+
+    Args:
+        service_name (str): the service name to call
+        service_type: the input datatype
+        data: the data to call the service with
+    """
+    rospy.wait_for_service(service_name)
+    try:
+        service = rospy.ServiceProxy(service_name, service_type)
+        service(*data)
+    except rospy.ServiceException as e:
+        print("Service call failed: %s" % e)
 
 
 class JackalState:
@@ -49,6 +66,7 @@ class JackalState:
 
 
 class GazeboJackalEnv(GazeboEnv):
+    RUNNING = False
 
     def __init__(self, path: list, reward_fnc, config=None, init_pose=(0, 0)):
         # Launch the simulation with the given launchfile name
@@ -130,11 +148,15 @@ class GazeboJackalEnv(GazeboEnv):
         if self.step_iterator == 0:
             self.start_time = rospy.get_time()
 
+        # print(action)
+
+        if not GazeboJackalEnv.RUNNING:
             rospy.wait_for_service('/gazebo/unpause_physics')
             try:
                 self.unpause()
             except (rospy.ServiceException) as e:
                 print("/gazebo/unpause_physics service call failed")
+        GazeboJackalEnv.RUNNING = True
 
         lin, ang = action
 
@@ -164,14 +186,21 @@ class GazeboJackalEnv(GazeboEnv):
         return state, reward, done, {}
 
     def reset(self):
-
         # Resets the state of the environment and returns an initial observation.
-        rospy.wait_for_service('/gazebo/reset_simulation')
+        rospy.wait_for_service('/gazebo/reset_world')
         try:
             # reset_proxy.call()
             self.reset_proxy()
         except (rospy.ServiceException) as e:
-            print("/gazebo/reset_simulation service call failed")
+            print("/gazebo/reset_world service call failed")
+
+        # Resets the state of the environment and returns an initial observation.
+        call_service(f'/{self.namespace}/set_pose', SetPose, [])
+
+        vel_cmd = Twist()
+        vel_cmd.linear.x = 0
+        vel_cmd.angular.z = 0
+        self.vel_pub.publish(vel_cmd)
 
         # Unpause simulation to make observation
         rospy.wait_for_service('/gazebo/unpause_physics')
@@ -186,10 +215,11 @@ class GazeboJackalEnv(GazeboEnv):
 
         rate = rospy.Rate(60)
 
-        while not self.read_first_data and not rospy.is_shutdown():
+        while self.read_first_data < 20 and not rospy.is_shutdown():
             rate.sleep()
 
         print("Got first data point")
+        print(self.robot.get_pose(), self.robot.get_angle())
 
         self.path.reset()
         self.robot.reset()
@@ -207,8 +237,9 @@ class GazeboJackalEnv(GazeboEnv):
         self.path.set_initial_state(self.robot)
         self.step_iterator = 0
         self.start_time = 0
+        GazeboJackalEnv.RUNNING = False
 
-        state = self.take_observation()
+        state, _ = self.take_observation()
         return state
 
 
