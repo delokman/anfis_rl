@@ -87,8 +87,8 @@ class GazeboJackalEnv(GazeboEnv):
         self.path = Path(path)
 
         self.vel_pub = rospy.Publisher(f'/{self.namespace}/jackal_velocity_controller/cmd_vel', Twist, queue_size=5)
-        self.odometry = rospy.Subscriber(f'/{self.namespace}/odometry/local_filtered', Odometry, self.odometry_callback,
-                                         queue_size=1)
+        # self.odometry = rospy.Subscriber(f'/{self.namespace}/odometry/local_filtered', Odometry, self.odometry_callback,queue_size=1)
+        self.odometry = rospy.Subscriber(f'/gazebo/model_states', ModelStates, self.odometry_callback, queue_size=1)
 
         self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         self.pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
@@ -117,12 +117,14 @@ class GazeboJackalEnv(GazeboEnv):
         self._seed()
         self.reset()
 
-    def odometry_callback(self, msg: Odometry):
-        self.read_first_data += 1
-        self.robot.x = msg.pose.pose.position.x
-        self.robot.y = msg.pose.pose.position.y
+    def odometry_callback(self, msg: ModelStates):
+        pose = msg.pose[1]
 
-        orientation_q = msg.pose.pose.orientation
+        self.read_first_data += 1
+        self.robot.x = pose.position.x
+        self.robot.y = pose.position.y
+
+        orientation_q = pose.orientation
         orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
         (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
 
