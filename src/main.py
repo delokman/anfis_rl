@@ -33,7 +33,7 @@ from torch.utils.tensorboard import SummaryWriter
 from anfis.utils import plot_fuzzy_consequent, plot_fuzzy_membership_functions, plot_fuzzy_variables, \
     plot_critic_weights
 from gazebo_utils.jackal import Jackal
-from gazebo_utils.path import Path
+from gazebo_utils.path import Path, extend_path
 from rl.ddpg import DDPGAgent
 from rl.predifined_anfis import optimized_many_error_predefined_anfis_model_with_velocity
 from rl.utils import fuzzy_error, reward3
@@ -519,23 +519,6 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     del jackal, path, distance_errors, theta_far_errors, theta_near_errors, rewards_cummulative, yaw_rates, velocities, reward_components, rule_weights
 
     return dist_error_mae, error
-
-
-def extend_path(path: list):
-    """
-    In order to fix angle errors and index out of bounds, the path is extended by a single segment which is in the same angle as the last segment
-
-    Args:
-        path: The path to extend
-    """
-    before_end, end = np.array(path[-2]), np.array(path[-1])
-
-    diff = (end - before_end)
-    diff /= np.linalg.norm(diff)
-
-    after_end = diff * 10 + end
-
-    path.append(after_end)
 
 
 def is_gazebo_simulation():

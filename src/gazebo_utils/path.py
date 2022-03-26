@@ -1,6 +1,23 @@
 import numpy as np
 
 
+def extend_path(path: list):
+    """
+    In order to fix angle errors and index out of bounds, the path is extended by a single segment which is in the same angle as the last segment
+
+    Args:
+        path: The path to extend
+    """
+    before_end, end = np.array(path[-2]), np.array(path[-1])
+
+    diff = (end - before_end)
+    diff /= np.linalg.norm(diff)
+
+    after_end = diff * 10 + end
+
+    path.append(after_end)
+
+
 class Path:
     def __init__(self, points):
         self.path = points
@@ -10,6 +27,11 @@ class Path:
 
         self.estimated_path_length = self.calcualte_estimated_path_length()
 
+        self.transform = None
+
+    def reset(self):
+        self.stop = False
+        self.path_count = 0
         self.transform = None
 
     def calcualte_estimated_path_length(self):
