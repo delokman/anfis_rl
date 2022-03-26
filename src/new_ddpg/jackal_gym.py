@@ -77,14 +77,19 @@ class GazeboJackalEnv(GazeboEnv):
         self.reset_proxy = rospy.ServiceProxy('/gazebo/reset_simulation', Empty)
 
         # distance_target, distance_line, theta_lookahead, theta_far, theta_near
-        self.action_space = spaces.Box(low=np.array([0., -np.inf, -np.pi, -np.pi, -np.pi]),
-                                       high=np.array([np.inf, np.inf, np.pi, np.pi, np.pi]), dtype=np.float32)
+
+        self.observation_space = spaces.Box(low=np.array([0., -np.inf, -np.pi, -np.pi, -np.pi]),
+                                            high=np.array([np.inf, np.inf, np.pi, np.pi, np.pi]), dtype=np.float32)
+
+        self.action_space = spaces.Box(low=np.array([-JackalState.MAX_ANG_SPEED, 0]),
+                                       high=np.array([JackalState.MAX_ANG_SPEED, JackalState.MAX_SPEED]),
+                                       dtype=np.float32)
         self.reward_range = (-np.inf, np.inf)
 
         self.stop = False
         self.read_first_data = 0
 
-        self.max_time = self.path.get_estimated_time(JackalState.MAX_SPEED / 2)
+        self.max_time = self.path.get_estimated_time(JackalState.MAX_SPEED / 2) * 1.5
 
         self.start_time = 0
         self.step_iterator = 0
