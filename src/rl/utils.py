@@ -80,7 +80,7 @@ def reward(errors, linear_vel, angular_vel, params):
     scale_lookahead = params['scale_lookahead']
     max_angular_vel = params['max_angular_vel']
 
-    if errors.shape[0] == 5:
+    if len(errors) == 5 or errors.shape[0] == 5:
         # theta recovery = theta far
         target, dis, theta_lookahead, theta_recovery, theta_near = errors
     else:

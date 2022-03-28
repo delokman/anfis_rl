@@ -219,11 +219,14 @@ def plot_summary_results(summary: SummaryWriter, y_predicted, y_actual):
     summary.add_figure("Result/Results", fig)
 
 
-def plot_critic_weights(summary, model, epoch):
-    critic = model.critic
-
-    for name, layer in critic.named_parameters():
+def plot_model_weights(summary, model, epoch):
+    for name, layer in model.named_parameters():
         name = name.replace(".", "/")
 
         if layer.nelement() != 0:
             summary.add_histogram(name, layer, global_step=epoch)
+
+
+def plot_critic_weights(summary, model, epoch):
+    critic = model.critic
+    plot_model_weights(summary, critic, epoch)

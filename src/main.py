@@ -75,6 +75,12 @@ def reset_world(is_simulation: bool = False):
     rospy.sleep(2)
 
 
+def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis):
+    plot_fuzzy_consequent(summary, anfis, epoch)
+    plot_fuzzy_membership_functions(summary, anfis, epoch)
+    plot_fuzzy_variables(summary, anfis, epoch)
+
+
 def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):
     """
     Plots the actor's fuzzy consequence layer (the triangle output membership functions), the membership functions (all the input membership trapezoids) as images and then all the associated parameters as scalars
@@ -85,10 +91,7 @@ def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):
         agent: the DDPG model
     """
     anfis = agent.actor
-
-    plot_fuzzy_consequent(summary, anfis, epoch)
-    plot_fuzzy_membership_functions(summary, anfis, epoch)
-    plot_fuzzy_variables(summary, anfis, epoch)
+    plot_anfis_model_data(summary, epoch, anfis)
 
 
 def agent_update(agent: DDPGAgent, batch_size: int, summary: SummaryWriter = None):
