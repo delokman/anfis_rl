@@ -133,15 +133,6 @@ class JointAnfisNet(torch.nn.Module):
             # weighted-sum layer is just implemented as a function.
         ]))
 
-        self.is_cuda = False
-
-    def cuda_memberships(self):
-        for i in self.layer['fuzzify'].varmfs.values():
-            i.is_cuda = True
-
-    def cuda_mamdani(self):
-        self.layer['consequent'].mamdani_defs.to_cuda()
-
     @property
     def num_out(self):
         return len(self.outvarnames)
@@ -153,12 +144,6 @@ class JointAnfisNet(torch.nn.Module):
     @coeff.setter
     def coeff(self, new_coeff):
         self.layer['consequent'].coeff = new_coeff
-
-    def cuda(self, device=None):
-        super(JointAnfisNet, self).cuda(device)
-        self.cuda_memberships()
-        self.cuda_mamdani()
-        self.is_cuda = True
 
     def fit_coeff(self, *params):
         """
@@ -243,13 +228,16 @@ class JointAnfisNet(torch.nn.Module):
     def set_training_mode(self, mode):
         self.train(mode)
 
+    def is_cuda(self) -> bool:
+        return next(self.parameters()).is_cuda
+
     def forward(self, x):
         """
             Forward pass: run x thru the five layers and return the y values.
             I save the outputs from each layer to an instance variable,
             as this might be useful for comprehension/debugging.
         """
-        if self.is_cuda and not x.is_cuda:
+        if self.is_cuda() and not x.is_cuda:
             x.cuda()
 
         # with torch.no_grad:
