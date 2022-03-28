@@ -11,6 +11,8 @@ import rospy
 # from rosgraph_msgs.msg import Clock
 from gym.utils import seeding
 
+# From https://github.com/erlerobot/gym-gazebo/blob/master/gym_gazebo/envs/gazebo_env.py
+
 
 class GazeboEnv(gym.Env):
     """Superclass for all Gazebo environments.
