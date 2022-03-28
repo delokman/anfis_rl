@@ -8,9 +8,9 @@ from matplotlib import pyplot as plt
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat
 from stable_baselines3.common.noise import NormalActionNoise
-from stable_baselines3.td3 import TD3
+from stable_baselines3.td3.td3 import TD3
 
-from anfis.utils import plot_model_weights
+from anfis.utils import plot_model_weights, plot_fuzzy_variables
 from gazebo_utils.test_course import test_course3
 from main import plot_anfis_model_data
 from new_ddpg.jackal_gym import GazeboJackalEnv
@@ -35,7 +35,9 @@ class TensorboardCallback(BaseCallback):
     def __init__(self, verbose=0):
         super(TensorboardCallback, self).__init__(verbose)
 
-        self._log_freq = 1000
+        self._log_freq = 1
+
+        self._param_log = 100
 
         self.obs_name = ["Graphs/Target Error", "Graphs/Distance Error", "Graphs/Theta Lookahead", "Graphs/theta_far",
                          "Graphs/Theta Near"]
@@ -44,6 +46,9 @@ class TensorboardCallback(BaseCallback):
         self.epoch_num = 0
 
         self.tb_formatter: Optional[TensorBoardOutputFormat] = None
+
+        self.velocities = None
+        self.distance_errors = None
 
     def _on_training_start(self) -> None:
         """
@@ -56,10 +61,15 @@ class TensorboardCallback(BaseCallback):
         self.tb_formatter: TensorBoardOutputFormat = next(
             formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
 
-        plot_model_weights(self.tb_formatter.writer, model.policy.critic, -1)
+        plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, -1)
         # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, -1)
-        plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor)
+        plot_anfis_model_data(self.tb_formatter.writer, -1, self.model.policy.actor)
         # plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor_target)
+
+    def _on_rollout_start(self) -> None:
+        del self.velocities, self.distance_errors
+        self.velocities = []
+        self.distance_errors = []
 
     def _on_step(self) -> bool:
         """
@@ -79,8 +89,19 @@ class TensorboardCallback(BaseCallback):
         for ob_name, ob in zip(self.obs_name, obs[0]):
             self.logger.record(ob_name, ob, exclude=("stdout"))
 
+            if "Distance Error" in ob_name:
+                self.distance_errors.append(ob)
+
         for act_name, act in zip(self.act_name, act[0]):
             self.logger.record(act_name, act, exclude=("stdout"))
+
+            if "Velocity" in act_name:
+                self.velocities.append(act)
+
+        if self.n_calls % self._param_log == 0:
+            print(self.num_timesteps)
+            plot_fuzzy_variables(self.tb_formatter.writer, self.model.policy.actor, self.num_timesteps)
+            self.tb_formatter.writer.flush()
 
         if self.n_calls % self._log_freq == 0:
             self.logger.dump(self.num_timesteps)
@@ -91,10 +112,27 @@ class TensorboardCallback(BaseCallback):
         """
         This event is triggered before updating the policy.
         """
-        plot_model_weights(self.tb_formatter.writer, model.policy.critic, self.epoch_num)
+        plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, self.epoch_num)
         # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, self.epoch_num)
-        plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, model.policy.actor)
+        plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, self.model.policy.actor, variable_tensorboard_logging=False)
         # plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, model.policy.actor_target)
+
+        distance_errors = np.asarray(self.distance_errors)
+
+        max_distance_error = np.max(distance_errors)
+        dist_error_mae = np.mean(np.abs(distance_errors))
+        dist_error_rmse = np.sqrt(np.mean(np.power(distance_errors, 2)))
+        avg_velocity = np.mean(self.velocities)
+
+        output = {"Logs/Dist Error MAE": dist_error_mae,
+                  "Logs/Dist Error RSME": dist_error_rmse,
+                  "Logs/Dist Error Max": max_distance_error,
+                  "Logs/Average Velocity": avg_velocity,
+                  }
+
+        excl = {i: None for i in output.keys()}
+
+        self.tb_formatter.write(output, key_excluded=excl, step=self.epoch_num)
 
         self.epoch_num += 1
 
