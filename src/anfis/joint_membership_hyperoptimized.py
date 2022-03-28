@@ -19,7 +19,7 @@ class JointMembershipHyperOptimized(JointMembership):
 
     # @profile
     def forward(self, x):
-        if self.is_cuda and not x.is_cuda:
+        if self.zeroes.is_cuda and not x.is_cuda:
             x = x.cuda()
 
         y_pred = self.compute(x)
