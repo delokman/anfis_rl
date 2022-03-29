@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat
+from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat, Figure
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.td3.td3 import TD3
 
@@ -49,6 +49,7 @@ class TensorboardCallback(BaseCallback):
 
         self.velocities = None
         self.distance_errors = None
+        self.poses = None
 
     def _on_training_start(self) -> None:
         """
@@ -67,9 +68,11 @@ class TensorboardCallback(BaseCallback):
         # plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor_target)
 
     def _on_rollout_start(self) -> None:
-        del self.velocities, self.distance_errors
+        del self.velocities, self.distance_errors, self.poses
         self.velocities = []
         self.distance_errors = []
+
+        self.poses = []
 
     def _on_step(self) -> bool:
         """
@@ -85,6 +88,10 @@ class TensorboardCallback(BaseCallback):
 
         obs = self.locals['new_obs']
         act = self.locals['action']
+
+        robot = self.locals['env'].envs[0].robot
+
+        self.poses.append(robot.get_pose())
 
         for ob_name, ob in zip(self.obs_name, obs[0]):
             self.logger.record(ob_name, ob, exclude=("stdout"))
@@ -114,7 +121,8 @@ class TensorboardCallback(BaseCallback):
         """
         plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, self.epoch_num)
         # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, self.epoch_num)
-        plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, self.model.policy.actor, variable_tensorboard_logging=False)
+        plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, self.model.policy.actor,
+                              variable_tensorboard_logging=False)
         # plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, model.policy.actor_target)
 
         distance_errors = np.asarray(self.distance_errors)
@@ -133,6 +141,21 @@ class TensorboardCallback(BaseCallback):
         excl = {i: None for i in output.keys()}
 
         self.tb_formatter.write(output, key_excluded=excl, step=self.epoch_num)
+
+        env: GazeboJackalEnv = self.locals['env'].envs[0]
+        # plot
+        test_path = np.array(env.path.path)
+        robot_path = env.path.inverse_transform_poses(self.poses)
+
+        fig, ax = plt.subplots()
+        ax.set_aspect('equal')
+        ax.plot(test_path[:-1, 0], test_path[:-1, 1])
+        del test_path
+        ax.plot(robot_path[:, 0], robot_path[:, 1])
+        del robot_path
+        fig.tight_layout()
+        self.logger.record("Path/Plot", Figure(fig, close=True), exclude=("stdout", "log", "json", "csv"))
+        plt.close(fig)
 
         self.epoch_num += 1
 

@@ -75,10 +75,12 @@ def reset_world(is_simulation: bool = False):
     rospy.sleep(2)
 
 
-def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis):
+def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis, variable_tensorboard_logging=True):
     plot_fuzzy_consequent(summary, anfis, epoch)
     plot_fuzzy_membership_functions(summary, anfis, epoch)
-    plot_fuzzy_variables(summary, anfis, epoch)
+
+    if variable_tensorboard_logging:
+        plot_fuzzy_variables(summary, anfis, epoch)
 
 
 def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):

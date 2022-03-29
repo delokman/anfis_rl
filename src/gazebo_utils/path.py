@@ -170,3 +170,10 @@ class Path:
         ])
 
         self.inverse_transform = R @ T
+
+    def inverse_transform_poses(self, path):
+        path = np.asarray(path)
+        path = np.append(path, np.zeros((path.shape[0], 1)), axis=1)
+        poses = (path @ self.inverse_transform[:, :, None]).squeeze(-1).T
+
+        return poses
