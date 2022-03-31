@@ -124,7 +124,7 @@ def reward(errors, linear_vel, angular_vel, params):
     #return rewards, [dis / scale, theta_near / scale, theta_recovery / scale, linear_vel / scale, angular_vel / scale,
     #                 theta_lookahead / scale]
     dis = 1 / (abs(dis) + 0.25)
-
-    rewards = -dis
+    theta_near = 1/(abs(theta_near) + 0.25)
+    rewards = -dis*theta_near
     return rewards, [dis, theta_near, theta_recovery, linear_vel, angular_vel, theta_lookahead]
 

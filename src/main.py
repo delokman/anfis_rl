@@ -430,7 +430,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
             e = time.time()
 
             hz = 1 / (e - s)
-            print(hz)
+            # print(hz)
             update_step += 1
 
     del rospy.core._client_shutdown_hooks[-1]
@@ -490,7 +490,7 @@ def is_gazebo_simulation():
 if __name__ == '__main__':
     rospy.init_node('anfis_rl')
 
-    epoch_number = 1
+    epoch_number = 4
     for i in range(epoch_number):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
