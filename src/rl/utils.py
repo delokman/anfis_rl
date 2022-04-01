@@ -159,9 +159,119 @@ def reward2(errors, linear_vel, angular_vel, params):
     return reward, [distance_error, theta_near_error, theta_recovery_error, linear_vel_error, angular_vel_error,
                     angle_forward_total]
 
+
 def reward3(errors, linear_vel, angular_vel, params):
     target, dis, theta_lookahead, theta_recovery, theta_near = errors
     dis = 1 / (abs(dis) + 0.25)
 
     return dis, [dis, theta_near, theta_recovery, linear_vel, angular_vel,
                  theta_lookahead]
+
+
+class Reward:
+    def __init__(self):
+        self.prev_speed = None
+        self.prev_turn_speed = None
+        self.prev_step = None
+        self.prev_direction_diff = None
+        self.prev_normalized_distance_from_route = None
+
+    def reset(self):
+        self.prev_speed = None
+        self.prev_turn_speed = None
+        self.prev_step = None
+        self.prev_direction_diff = None
+        self.prev_normalized_distance_from_route = None
+
+    def __call__(self, errors, linear_vel, angular_vel, params):
+        target, dis, theta_lookahead, theta_recovery, theta_near = errors
+
+        steps = params['steps']
+
+        if self.prev_step is None or steps < self.prev_speed:
+            self.reset()
+
+        # SPEED REWARD
+        MIN_SPEED = 1.
+        MAX_SPEED = 2.
+        optimal_speed = 2.
+
+        sigma_speed = abs(MAX_SPEED - MIN_SPEED) / 6.
+        speed_reward = np.exp(-0.5 * abs(linear_vel - optimal_speed) ** 2 / (sigma_speed ** 2))
+
+        has_speed_dropped = False
+        if self.prev_speed is not None:
+            if self.prev_speed > linear_vel:
+                has_speed_dropped = True
+
+        is_turn_upcoming = target < 0.5
+        speed_maintain_bonus = 1
+        if has_speed_dropped and not is_turn_upcoming:
+            speed_maintain_bonus = min(linear_vel / self.prev_speed, 1.)
+
+        # DISTANCE REWARD
+        MAX_DISTANCE = 1
+        normalized_distance = dis / MAX_DISTANCE
+
+        sigma = abs(normalized_distance / 4)
+        distance_reward = np.exp(-0.5 * abs(normalized_distance) ** 2 / sigma ** 2)
+
+        distance_reduction_bonus = 1
+        if self.prev_normalized_distance_from_route is not None and self.prev_normalized_distance_from_route > normalized_distance:
+            distance_reduction_bonus = min(abs(self.prev_normalized_distance_from_route / normalized_distance), 2)
+
+        # HEADING
+        heading_reward = np.cos(abs(theta_near)) ** 10
+
+        if abs(theta_near) <= np.deg2rad(20):
+            heading_reward = np.cos(abs(theta_near)) ** 4
+
+        has_steering_angle_changed = False
+        if abs(angular_vel) > .5:
+            has_steering_angle_changed = True
+
+        is_heading_in_right_direction = False
+        if abs(theta_near) < np.deg2rad(15):
+            is_heading_in_right_direction = True
+
+        steering_angle_maintain_bonus = 1.
+
+        if is_heading_in_right_direction and not has_steering_angle_changed:
+            if abs(theta_near) < np.deg2rad(10):
+                steering_angle_maintain_bonus *= 2
+            if abs(theta_near) < np.deg2rad(5):
+                steering_angle_maintain_bonus *= 2
+            if self.prev_direction_diff is not None and abs(self.prev_direction_diff) > abs(theta_near):
+                steering_angle_maintain_bonus *= 2
+
+        heading_decrease_bonus = 0
+        if self.prev_direction_diff is not None:
+            if is_heading_in_right_direction:
+                if abs(self.prev_direction_diff / dis) > 1:
+                    heading_decrease_bonus = min(10, abs(self.prev_direction_diff / dis))
+
+        HC = (10 * heading_reward * steering_angle_maintain_bonus)
+        DC = (10 * distance_reward * distance_reduction_bonus)
+        SC = (5 * speed_reward * speed_maintain_bonus)
+
+        IC = (HC + DC + SC) ** 2 + (HC * DC * SC)
+
+        error_state = False
+        if abs(dis) > 1.5:
+            error_state = True
+        if abs(theta_near) > np.deg2rad(30):
+            error_state = True
+
+        if error_state:
+            IC = 1e-3
+
+        # LC = (curve_bonus + intermediate_progress_bonus + heading_decrease_bonus)
+        LC = (heading_decrease_bonus)
+
+        self.prev_speed = linear_vel
+        self.prev_direction_diff = theta_near
+        self.prev_step = steps
+        self.prev_normalized_distance_from_route = normalized_distance
+        self.prev_turn_speed = angular_vel
+
+        return max(IC + LC, 1e-3)
