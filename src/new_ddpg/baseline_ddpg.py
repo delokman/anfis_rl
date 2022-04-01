@@ -20,8 +20,29 @@ from rl.utils import reward
 
 def create_env():
     course = test_course3()
-    reward_func = reward4
-    env = GazeboJackalEnv(path=course, reward_fnc=reward_func)
+    reward_func = lambda errors, linear_vel, angular_vel, params: ( 1/ (abs(errors[1]) + .25) + 1 / (abs(errors[-1]) + .4), None)
+    reward_scales = {
+        'reward_scale': 15.,
+        'DE_penalty_gain': 25 / 1.5,
+        'DE_penalty_shape': 1,
+        'HE_penalty_gain': 25 * 2,
+        'HE_penalty_shape': 3,
+        'HE_iwrt_DE': 2,
+        'vel_reward_gain': 2,
+        'vel_iwrt_DE': 1,
+        'steering_penalty_gain': 4,
+        'steering_iwrt_DE': 4,
+        'dis_scale': 1,
+        'sigmoid_near': 25,
+        'scale_near': -15 / 100,
+        'sigmoid_recovery': 4.5,
+        'scale_recovery': -1.5 / 12,
+        'exp_lookahead': 1,
+        'scale_lookahead': -100 / 2 / 1.5,
+        'max_angular_vel': 4,
+    }
+
+    env = GazeboJackalEnv(path=course, reward_fnc=reward_func, config=reward_scales)
     time.sleep(10)
 
     return env
