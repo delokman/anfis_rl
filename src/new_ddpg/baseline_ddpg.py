@@ -186,11 +186,17 @@ if __name__ == '__main__':
 
     env = create_env()
 
-    # The noise objects for DDPG
-    n_actions = env.action_space.shape[-1]
-    action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+    try:
+        # The noise objects for DDPG
+        n_actions = env.action_space.shape[-1]
+        action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
 
-    model = TD3(TD3Policy, env, action_noise=action_noise, verbose=1, tensorboard_log="./logging/")
-    model.learn(total_timesteps=100000, log_interval=1, callback=TensorboardCallback())
-    model.save("ddpg_pendulum")
-    env = model.get_env()
+        # TODO upgrade python version to 3.9 in order to update baseline class to be able to use SDE noise
+        model = TD3(TD3Policy, env, action_noise=action_noise, verbose=1, tensorboard_log="./logging/")
+        model.learn(total_timesteps=100000, log_interval=1, callback=TensorboardCallback())
+        model.save("ddpg_pendulum")
+        env = model.get_env()
+    except:
+        traceback.print_exc()
+        env.close()
+    env.close()
