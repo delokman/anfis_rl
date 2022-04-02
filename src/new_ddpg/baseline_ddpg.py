@@ -1,3 +1,4 @@
+import inspect
 import time
 import traceback
 from typing import Optional
@@ -15,7 +16,8 @@ from gazebo_utils.test_course import test_course3
 from main import plot_anfis_model_data
 from new_ddpg.jackal_gym import GazeboJackalEnv
 from new_ddpg.policy import TD3Policy
-from rl.utils import reward
+from rl.utils import Reward
+from torch.utils.tensorboard.summary import hparams
 
 
 def create_env():
@@ -88,6 +90,24 @@ class TensorboardCallback(BaseCallback):
         plot_anfis_model_data(self.tb_formatter.writer, -1, self.model.policy.actor)
         # plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor_target)
 
+        env: GazeboJackalEnv = self.model.env.envs[0]
+
+        fnc = env.reward_fnc
+
+        if not isinstance(fnc, type):
+            fnc = fnc.__class__
+
+        code = f"""```python\n{inspect.getsource(fnc)}```"""
+
+        self.tb_formatter.writer.add_text("Reward Function", code)
+
+        exp, ssi, sei = hparams(env.config,  {'rollout/ep_rew_mean': 0.0})
+        self.tb_formatter.writer.file_writer.add_summary(exp)
+        self.tb_formatter.writer.file_writer.add_summary(ssi)
+        self.tb_formatter.writer.file_writer.add_summary(sei)
+
+        self.tb_formatter.writer.flush()
+
     def _on_rollout_start(self) -> None:
         del self.velocities, self.distance_errors, self.poses
         self.velocities = []
@@ -110,18 +130,20 @@ class TensorboardCallback(BaseCallback):
         obs = self.locals['new_obs']
         act = self.locals['action']
 
-        robot = self.locals['env'].envs[0].robot
+        robot = self.model.env.envs[0].robot
 
         self.poses.append(robot.get_pose())
 
+        reward_components = self.locals['infos'][0]['components']
+
         for ob_name, ob in zip(self.obs_name, obs[0]):
-            self.logger.record(ob_name, ob, exclude=("stdout"))
+            self.logger.record(ob_name, ob, exclude=("stdout",))
 
             if "Distance Error" in ob_name:
                 self.distance_errors.append(ob)
 
         for act_name, act in zip(self.act_name, act[0]):
-            self.logger.record(act_name, act, exclude=("stdout"))
+            self.logger.record(act_name, act, exclude=("stdout",))
 
             if "Velocity" in act_name:
                 self.velocities.append(act)
@@ -129,6 +151,10 @@ class TensorboardCallback(BaseCallback):
         if self.n_calls % self._param_log == 0:
             print(self.num_timesteps)
             plot_fuzzy_variables(self.tb_formatter.writer, self.model.policy.actor, self.num_timesteps)
+
+        for key, l in reward_components.items():
+            self.tb_formatter.writer.add_scalar(f"Reward/{key}", l, global_step=self.num_timesteps)
+
             self.tb_formatter.writer.flush()
 
         if self.n_calls % self._log_freq == 0:
