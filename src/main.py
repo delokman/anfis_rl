@@ -15,10 +15,10 @@ from tqdm import tqdm
 
 from gazebo_utils.new_test_courses import z_course, straight_line, curved_z
 from gazebo_utils.pauser import BluetoothEStop
-from rl.checkpoint_storage import LowestCheckpoint
-from rl.noise import OUNoise
 from gazebo_utils.test_course import test_course3
 from gazebo_utils.utils import add_hparams, markdown_rule_table
+from rl.checkpoint_storage import LowestCheckpoint
+from rl.noise import OUNoise
 
 matplotlib.use('Agg')
 
@@ -509,10 +509,12 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
             summary.add_histogram(f"Gradients/{name}", dist, global_step=i)
             del dist
 
-    dist_error_rmse, dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors, theta_far_errors,
-                                         theta_near_errors,
-                                         rewards_cummulative, checkpoint, i, yaw_rates, velocities, reward_components,
-                                         rule_weights, train)
+    dist_error_rmse, dist_error_mae = summary_and_logging(summary, agent, params, jackal, path, distance_errors,
+                                                          theta_far_errors,
+                                                          theta_near_errors,
+                                                          rewards_cummulative, checkpoint, i, yaw_rates, velocities,
+                                                          reward_components,
+                                                          rule_weights, train)
     # min_velocity_training_RMSE = 0.30
     # if dist_error_rmse < min_velocity_training_RMSE:
     #     agent.train_velocity = False
@@ -537,7 +539,7 @@ def is_gazebo_simulation():
     return "/gazebo/model_states" in topic_names
 
 
-if __name__ == '__main__':
+def main():
     rospy.init_node('anfis_rl')
 
     validate = False
@@ -654,8 +656,8 @@ if __name__ == '__main__':
         summary.add_scalar('model/critic_lr', scheduler1.get_last_lr()[0], -1)
         summary.add_scalar('model/actor_lr', scheduler2.get_last_lr()[0], -1)
 
-        #error_threshold = 0.03
-        error_threshold = 0.075
+        # error_threshold = 0.03
+        error_threshold = 0.0075
 
         train = True
         agent.train_inputs = True
@@ -716,3 +718,7 @@ if __name__ == '__main__':
         summary.close()
 
         print("Lowest checkpoint error:", checkpoint_saver.error, ' Error:', checkpoint_saver.checkpoint_location)
+
+
+if __name__ == '__main__':
+    main()
