@@ -188,7 +188,7 @@ class Reward:
 
         steps = params['steps']
 
-        if self.prev_step is None or steps < self.prev_speed:
+        if self.prev_step is None or steps < self.prev_step:
             self.reset()
 
         # SPEED REWARD
@@ -213,7 +213,7 @@ class Reward:
         MAX_DISTANCE = 1
         normalized_distance = dis / MAX_DISTANCE
 
-        sigma = abs(normalized_distance / 4)
+        sigma = abs(MAX_DISTANCE / 4)
         distance_reward = np.exp(-0.5 * abs(normalized_distance) ** 2 / sigma ** 2)
 
         distance_reduction_bonus = 1
@@ -238,11 +238,11 @@ class Reward:
 
         if is_heading_in_right_direction and not has_steering_angle_changed:
             if abs(theta_near) < np.deg2rad(10):
-                steering_angle_maintain_bonus *= 2
+                steering_angle_maintain_bonus *= 1.5
             if abs(theta_near) < np.deg2rad(5):
-                steering_angle_maintain_bonus *= 2
+                steering_angle_maintain_bonus *= 1.5
             if self.prev_direction_diff is not None and abs(self.prev_direction_diff) > abs(theta_near):
-                steering_angle_maintain_bonus *= 2
+                steering_angle_maintain_bonus *= 1.25
 
         heading_decrease_bonus = 0
         if self.prev_direction_diff is not None:
@@ -257,7 +257,7 @@ class Reward:
         IC = (HC + DC + SC) ** 2 + (HC * DC * SC)
 
         error_state = False
-        if abs(dis) > 1.5:
+        if abs(dis) > MAX_DISTANCE:
             error_state = True
         if abs(theta_near) > np.deg2rad(30):
             error_state = True
@@ -274,4 +274,11 @@ class Reward:
         self.prev_normalized_distance_from_route = normalized_distance
         self.prev_turn_speed = angular_vel
 
-        return max(IC + LC, 1e-3)
+        total_reward = max(IC + LC, 1e-3)
+
+        return total_reward, dict(Reward=total_reward, IC=IC, LC=LC, HC=HC, DC=DC, SC=SC,
+                                  heading_reward=heading_reward,
+                                  steering_angle_maintain_bonus=steering_angle_maintain_bonus,
+                                  distance_reward=distance_reward,
+                                  distance_reduction_bonus=distance_reduction_bonus, speed_reward=speed_reward,
+                                  speed_maintain_bonus=speed_maintain_bonus)
