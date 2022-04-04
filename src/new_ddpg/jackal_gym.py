@@ -185,13 +185,15 @@ class GazeboJackalEnv(GazeboEnv):
             done = True
             print("DONE!")
 
+        self.config['steps'] = self.step_iterator
+
         reward, components = self.reward_fnc(state, lin, ang, self.config)
 
         self.step_iterator += 1
 
         rate.sleep()
 
-        return state, reward, done, {}
+        return state, reward, done, {"components": components}
 
     def reset(self):
         # Resets the state of the environment and returns an initial observation.
