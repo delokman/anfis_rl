@@ -94,7 +94,7 @@ class TensorboardCallback(BaseCallback):
 
         fnc = env.reward_fnc
 
-        if not isinstance(fnc, type):
+        if not inspect.isfunction(fnc) and not isinstance(fnc, type):
             fnc = fnc.__class__
 
         code = f"""```python\n{inspect.getsource(fnc)}```"""
