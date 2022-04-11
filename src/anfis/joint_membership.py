@@ -9,7 +9,7 @@ def _mk_param(val, dtype=torch.float):
     """Make a torch parameter from a scalar value"""
     if isinstance(val, torch.Tensor):
         val = val.item()
-    return torch.nn.Parameter(torch.tensor(val, dtype=dtype))
+    return torch.nn.Parameter(torch.tensor(val, dtype=dtype), requires_grad=True)
 
 
 class BellMembFunc(torch.nn.Module):
