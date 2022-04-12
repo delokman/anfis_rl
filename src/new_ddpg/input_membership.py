@@ -49,12 +49,12 @@ class JointTrapMembership(JointMembership):
         x1 = total[:-1:2]
         x2 = total[1::2]
 
-        up_slope = (x[:, 1:] - x1) / (x2 - x1)
+        up_slope = (x - x1) / (x2 - x1)
         down_slope = 1 - up_slope
         torch.clamp_(up_slope, min=0, max=1)
         torch.clamp_(down_slope, min=0, max=1)
 
-        out = torch.ones_like(x)
+        out = torch.ones((x.shape[0], weights.shape[0] + 1), device=x.device)
 
         out[:, 1:] = up_slope
         out[:, :-1] *= down_slope
