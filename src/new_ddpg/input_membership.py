@@ -12,6 +12,10 @@ torch.autograd.set_detect_anomaly(True)
 
 
 class JointMembership(ABC, torch.nn.Module):
+    def __init__(self, num_outputs):
+        super().__init__()
+        self.num_outputs = num_outputs
+
     @abstractmethod
     def left_x(self):
         pass
@@ -31,7 +35,7 @@ class JointTrapMembership(JointMembership):
             return (self.center + torch.sum(self.log_weights.exp())).detach()
 
     def __init__(self, center: float, trap_widths: List[float], constant_center=True):
-        super().__init__()
+        super().__init__(len(trap_widths) + 1)
 
         if constant_center:
             self.register_buffer("center", torch.tensor(center))
@@ -54,7 +58,7 @@ class JointTrapMembership(JointMembership):
         torch.clamp_(up_slope, min=0, max=1)
         torch.clamp_(down_slope, min=0, max=1)
 
-        out = torch.ones((x.shape[0], weights.shape[0] + 1), device=x.device)
+        out = torch.ones((x.shape[0], self.num_outputs), device=x.device)
 
         out[:, 1:] = up_slope
         out[:, :-1] *= down_slope
