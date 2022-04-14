@@ -5,7 +5,9 @@ from matplotlib import pyplot as plt
 from torch import nn
 
 from new_ddpg.input_membership import JointTrapMembership
+from new_ddpg.output_membership import CenterOfMaximum, SymmetricCenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
+from vizualize.auto_grad_viz import make_dot
 
 
 class JointAnfisNet(nn.Module):
@@ -17,19 +19,29 @@ class JointAnfisNet(nn.Module):
         self.output_variables = output_variables
 
         # FUZZIFY
-        self.register_buffer("num_outputs", torch.tensor([mem.num_outputs for mem in input_variables]))
+        self.register_buffer("num_inputs", torch.tensor([mem.num_outputs for mem in input_variables]))
 
-        res = self.num_outputs.cumsum(0).roll(1, 0)
+        res = self.num_inputs.cumsum(0).roll(1, 0)
         res[0] = 0
 
         self.register_buffer("start_indexes", res)
         self.register_buffer("len", torch.tensor(len(input_variables)))
         self.membership_fncs = nn.ModuleList(input_variables)
 
+        # OUTPUT
+        self.output_membership = nn.ModuleList(output_variables)
+
+        self.register_buffer("num_outputs", torch.tensor([mem.num_outputs for mem in output_variables]))
+
+        res = self.num_outputs.cumsum(0).roll(1, 0)
+        res[0] = 0
+
+        self.register_buffer("start_output_indexes", res)
+
         # RULES
         input_rules, output_rules = self.convert_rules(mamdani_ruleset)
-
         self.register_buffer("input_rules", input_rules)
+        self.register_buffer("output_rules", output_rules)
 
     def fuzzify(self, x):
         output = []
@@ -56,7 +68,7 @@ class JointAnfisNet(nn.Module):
                 fig, ax = plt.subplots()
 
                 start = self.start_indexes[i]
-                end = start + self.num_outputs[i]
+                end = start + self.num_inputs[i]
 
                 ax.plot(x[:, i], Y[:, start:end])
 
@@ -75,24 +87,27 @@ class JointAnfisNet(nn.Module):
             plt.show()
 
     def convert_rules(self, rules):
-        start_indexes = torch.cumsum(self.num_outputs - 1, dim=0).roll(1, 0)
+        start_indexes = torch.cumsum(self.num_inputs - 1, dim=0).roll(1, 0)
         start_indexes[0] = 0
 
         linguistic_index = torch.tensor(rules['variable_rule_index'])
         membership_indices = torch.tensor(rules['membership_indices'])
 
         start_indexes = start_indexes.repeat(linguistic_index.shape[0], 1)
+        input_indexes = torch.gather(start_indexes, 1, linguistic_index) + membership_indices
+
+        start_output_indexes = torch.cumsum(self.num_outputs, dim=0).roll(1, 0)
+        start_output_indexes[0] = 0
 
         outputs_membership = torch.tensor(rules['outputs_membership'])
         outputs_membership_velocity = torch.tensor(rules['outputs_membership_velocity'])
 
-        input_indexes = torch.gather(start_indexes, 1, linguistic_index) + membership_indices
-
-        output_rules = None
+        output_rules = torch.cat((outputs_membership, outputs_membership_velocity), dim=1) + start_output_indexes
 
         return input_indexes, output_rules
 
-    def t_norm(self, weights):
+    @staticmethod
+    def t_norm(weights):
         return torch.min(weights, dim=2)[0]
 
     def rules(self, fuzzified):
@@ -100,17 +115,31 @@ class JointAnfisNet(nn.Module):
         weights = fuzzified[:, self.input_rules]
         return self.t_norm(weights)
 
+    def output_weights(self, weights):
+        output = []
+
+        for membership in self.output_membership:
+            out = membership(weights)
+            output.append(out)
+
+        return torch.cat(output, dim=0)
+
+    def defuzzify(self, normalized_weights, output_weights):
+        output_weights = output_weights[self.output_rules]
+
+        return torch.mm(normalized_weights, output_weights)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         fuzzyfied: torch.Tensor = self.fuzzify(x)
-        # self.plot_fuzzified(x, fuzzyfied)
 
         weights = self.rules(fuzzyfied)
 
         normalized_weights = F.normalize(weights, p=1, dim=1)
 
-        # self.plot_weights(x, weights)
+        output_weights = self.output_weights(normalized_weights)
+        defuzzify = self.defuzzify(normalized_weights, output_weights)
 
-        return weights
+        return defuzzify
 
 
 if __name__ == '__main__':
