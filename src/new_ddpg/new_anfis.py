@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from matplotlib import pyplot as plt
-from torch import nn
+from torch import nn, profiler
 
 from new_ddpg.input_membership import JointTrapMembership
 from new_ddpg.output_membership import CenterOfMaximum, SymmetricCenterOfMaximum
@@ -142,17 +142,109 @@ class JointAnfisNet(nn.Module):
         return defuzzify
 
 
-if __name__ == '__main__':
-    mem1 = JointTrapMembership(0, np.log(np.array([1., 1., 1.])))
-    mem2 = JointTrapMembership(0, np.log(np.array([1., 1.])))
+def profile():
+    mem1 = JointTrapMembership(0, np.log(np.array([1., 1.])))
+    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1])))
+    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
 
-    a = JointAnfisNet([mem1, mem2], None, None)
+    ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
+
+    out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
+    out2 = CenterOfMaximum([0.1, 1., 2.])
+
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset)
+    # fuzzify = torch.jit.trace_module(a, {"forward": torch.randn((1000, 4))})
+
+    B = 1
+    E = 5
+    x = torch.linspace(-5, 5, B)
+    x = x.repeat(E, 1).T
+
+    x = x.to('cuda')
+    anfis = anfis.to('cuda')
+
+    traced_anfis = torch.jit.trace(anfis, x)
+
+    o = []
+    o2 = []
+    y = []
+
+    print("Starting")
+
+    N = 1000
+
+    for power in range(1, 10):
+        with profiler.profile() as prof:
+            for _ in range(N):
+                anfis(x)
+        print(prof.key_averages().table(sort_by='cuda_time_total', row_limit=5))
+
+        diff1 = prof.key_averages().total_average().self_cpu_time_total / N
+        cuda1 = prof.key_averages().total_average().self_cuda_time_total / N
+
+        with profiler.profile() as prof:
+            for _ in range(N):
+                traced_anfis(x)
+        print(prof.key_averages().table(sort_by='cuda_time_total', row_limit=5))
+
+        diff2 = prof.key_averages().total_average().self_cpu_time_total / N
+        cuda2 = prof.key_averages().total_average().self_cuda_time_total / N
+
+        if power != 1:
+            o.append((diff1, diff2))
+            o2.append((cuda1, cuda2))
+
+            y.append(power)
+    o = np.array(o)
+    plt.plot(y, o[:, 0], label='normal')
+    plt.plot(y, o[:, 1], label='optimal')
+    plt.legend()
+    plt.show()
+
+    o = np.array(o2)
+    plt.plot(y, o[:, 0], label='normal')
+    plt.plot(y, o[:, 1], label='optimal')
+    plt.legend()
+    plt.show()
+
+
+def main_test():
+    mem1 = JointTrapMembership(0, np.log(np.array([1., 1.])))
+    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1])))
+    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+
+    ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
+
+    out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
+    out2 = CenterOfMaximum([0.1, 1., 2.])
+
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset)
+    anfis.cuda()
+    # fuzzify = torch.jit.trace_module(a, {"forward": torch.randn((1000, 4))})
 
     B = 1000
     E = 5
     x = torch.linspace(-5, 5, B)
     x = x.repeat(E, 1).T
+    x = x.to('cuda')
 
-    out = a(x)
+    traced_anfis = torch.jit.trace(anfis, x)
+
+    print(traced_anfis.forward.graph)
+    print(traced_anfis.forward.code)
+
+    out = anfis(x)
+
+    out = out.sum()
+    g = make_dot(out, dict(anfis.named_parameters()))
+    g.view()
 
     print(out)
+
+
+if __name__ == '__main__':
+    profile()
