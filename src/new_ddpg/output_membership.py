@@ -11,10 +11,14 @@ from new_ddpg import FLOAT_TORCH_TYPE
 
 class SymmetricCenterOfMaximum(JointMembership):
     def left_x(self):
-        pass
+        with torch.no_grad():
+            o = self.forward(torch.zeros(1))
+            return o[0]
 
     def right_x(self):
-        pass
+        with torch.no_grad():
+            o = self.forward(torch.zeros(1))
+            return o[-1]
 
     def __init__(self, center: float, output_poses: List[float], constant_center=True):
         super().__init__(len(output_poses) * 2 + 1)
@@ -36,10 +40,12 @@ class SymmetricCenterOfMaximum(JointMembership):
 
 class CenterOfMaximum(JointMembership):
     def left_x(self):
-        pass
+        with torch.no_grad():
+            return self.log_weights[0].exp()
 
     def right_x(self):
-        pass
+        with torch.no_grad():
+            return torch.sum(self.log_weights.exp())[-1]
 
     def __init__(self, output_poses: List[float]):
         super().__init__(len(output_poses))
