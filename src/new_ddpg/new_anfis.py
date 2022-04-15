@@ -87,7 +87,7 @@ class JointAnfisNet(nn.Module):
             plt.show()
 
     def convert_rules(self, rules):
-        start_indexes = torch.cumsum(self.num_inputs - 1, dim=0).roll(1, 0)
+        start_indexes = torch.cumsum(self.num_inputs, dim=0).roll(1, 0)
         start_indexes[0] = 0
 
         linguistic_index = torch.tensor(rules['variable_rule_index'])
