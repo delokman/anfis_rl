@@ -68,22 +68,6 @@ class JointAnfisNet(nn.Module):
         return next(self.parameters()).is_cuda
 
     @torch.jit.ignore
-    def plot_fuzzified(self, x, fuzzyfied):
-        with torch.no_grad():
-            Y = fuzzyfied.cpu().detach()
-            x = x.cpu().detach()
-
-            for i in range(self.len):
-                fig, ax = plt.subplots()
-
-                start = self.start_indexes[i]
-                end = start + self.num_inputs[i]
-
-                ax.plot(x[:, i], Y[:, start:end])
-
-            plt.show()
-
-    @torch.jit.ignore
     def plot_weights(self, x, weights):
         with torch.no_grad():
             Y = weights.cpu().detach()
@@ -138,28 +122,45 @@ class JointAnfisNet(nn.Module):
 
         return torch.mm(normalized_weights, output_weights)
 
-    def fuzzyfied_data(self, data, fuzzified):
+    @property
+    def device(self) -> torch.device:
+        """Infer which device this policy lives on by inspecting its parameters.
+        If it has no parameters, the 'cpu' device is used as a fallback.
+
+        :return:"""
+        for param in self.parameters():
+            return param.device
+        return torch.device('cpu')
+
+    def plot_fuzzified(self, data=None, fuzzified=None):
         with torch.no_grad():
             last_num = 0
 
             for i, membership in enumerate(self.membership_fncs):
                 membership: JointMembership
 
-                x = torch.linspace(membership.left_x(), membership.right_x(), steps=100).reshape((-1, 1)).to(
-                    data.device)
+                x_min = membership.left_x()
+                x_max = membership.right_x()
+
+                diff = (x_max - x_min) * 0.1
+
+                x = torch.linspace(membership.left_x() - diff, membership.right_x() + diff, steps=100,
+                                   device=self.device).reshape((-1, 1))
 
                 out = membership(x)
 
-                x_d = data[:, i].repeat((membership.num_outputs, 1)).T
-                next_num = last_num + membership.num_outputs
-
-                out_d = fuzzified[:, last_num:next_num]
-
-                last_num = next_num
-
                 fig, ax = plt.subplots()
+
+                if data is not None and fuzzified is not None:
+                    x_d = data[:, i].repeat((membership.num_outputs, 1)).T
+                    next_num = last_num + membership.num_outputs
+
+                    out_d = fuzzified[:, last_num:next_num]
+
+                    last_num = next_num
+                    ax.scatter(x_d.cpu(), out_d.cpu())
+
                 ax.plot(x.cpu(), out.cpu())
-                ax.scatter(x_d.cpu(), out_d.cpu())
                 plt.show()
                 plt.close(fig)
 
