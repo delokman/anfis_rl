@@ -1,3 +1,5 @@
+import numpy as np
+
 from anfis.antecedent_layer import dist_target_dist_per_theta_lookahead_theta_far_theta_near, \
     dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 from anfis.consequent_layer import ConsequentLayerType
@@ -8,6 +10,11 @@ from anfis.joint_membership_hyperoptimized import JointSingleConstrainedEdgeMemb
 from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleConstrainedEdgeMembership, \
     Joint7TrapMembership
 from anfis.trainer import make_joint_anfis
+from new_ddpg.input_membership import JointTrapMembership
+# from new_ddpg.new_anfis import JointAnfisNet
+from new_ddpg.new_anfis import min_max_num_trapezoids, min_max_num_symmetric_center_of_max, min_max_num_center_of_max, \
+    JointAnfisNet
+from new_ddpg.output_membership import SymmetricCenterOfMaximum, CenterOfMaximum
 
 
 def predefined_anfis_model():
@@ -132,11 +139,9 @@ def optimized_many_error_predefined_anfis_model_with_velocity():
         # [0., 1.9652783870697021, 1.919374704360962, 1.4656635522842407, 1.4181907176971436],
         # [0.0017236630665138364, 1.2268195152282715],
 
-
-
-        #[0.2, .8, 1.]
+        # [0.2, .8, 1.]
         [0.2, .3, .8]
-        #[0.2, 1, 2.]
+        # [0.2, 1, 2.]
     ]
 
     x_joint_definitons = [
@@ -164,3 +169,20 @@ def optimized_many_error_predefined_anfis_model_with_velocity():
                              mamdani_ruleset=ruleset, velocity=True)
 
     return model
+
+
+def new_anfis_many_error_with_velocity():
+    mem1 = JointTrapMembership(*min_max_num_trapezoids(0, 1, 2))
+    mem2 = JointTrapMembership(*min_max_num_trapezoids(-1, 1, 7))
+    mem3 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
+    mem4 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
+    mem5 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
+
+    ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
+
+    out1 = SymmetricCenterOfMaximum(*min_max_num_symmetric_center_of_max(-4, 4, 9))
+    out2 = CenterOfMaximum(min_max_num_center_of_max(0, 2, 3))
+
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
+
+    return anfis
