@@ -200,6 +200,21 @@ class JointAnfisNet(nn.Module):
         scaled_constraint = contained * self.output_scaling + self.output_bias
         return scaled_constraint
 
+    def plot_outputs(self):
+        with torch.no_grad():
+            zero = torch.zeros(1, device=self.device)
+
+            for membership in self.output_membership:
+                out = membership(zero).cpu()
+
+                fig, ax = plt.subplots()
+
+                for i in out:
+                    ax.plot([i - 1, i, i + 1], [0, 1, 0])
+
+            plt.show()
+            plt.close(fig)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         self.fuzzyfied: torch.Tensor = self.fuzzify(x)
 
