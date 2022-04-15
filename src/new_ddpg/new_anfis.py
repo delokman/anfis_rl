@@ -123,7 +123,7 @@ class JointAnfisNet(nn.Module):
         weights = fuzzified[:, self.input_rules]
         return self.t_norm(weights)
 
-    def output_weights(self, weights):
+    def get_output_weights(self, weights):
         output = []
 
         for membership in self.output_membership:
@@ -203,7 +203,7 @@ class JointAnfisNet(nn.Module):
 
         # self.plot_fuzzified(x, self.fuzzyfied)
 
-        weights = self.rules(fuzzyfied)
+        # self.fuzzyfied_data(x, self.fuzzyfied)
 
         self.weights = self.rules(self.fuzzyfied)
 
@@ -211,10 +211,10 @@ class JointAnfisNet(nn.Module):
 
         self.normalized_weights = F.normalize(self.weights, p=1, dim=1)
 
-        self.output_weights = self.output_weights(self.normalized_weights)
-        self.defuzzify = self.defuzzify(self.normalized_weights, self.output_weights)
+        self.output_weights = self.get_output_weights(self.normalized_weights)
+        self.defuzzify_out = self.defuzzify(self.normalized_weights, self.output_weights)
 
-        self.constrained = self.constrain_scaling(self.defuzzify)
+        self.constrained = self.constrain_scaling(self.defuzzify_out)
 
         return self.constrained
 
