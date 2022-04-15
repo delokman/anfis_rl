@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from torch import profiler
 
 from anfis.joint_membership import _mk_param
+from new_ddpg import FLOAT_TORCH_TYPE
 
 
 class JointMembership(ABC, torch.nn.Module):
@@ -36,11 +37,11 @@ class JointTrapMembership(JointMembership):
         super().__init__(len(trap_widths) + 1)
 
         if constant_center:
-            self.register_buffer("center", torch.tensor(center))
+            self.register_buffer("center", torch.tensor(center, dtype=FLOAT_TORCH_TYPE))
         else:
-            self.register_parameter('center', _mk_param(center))
+            self.register_parameter('center', _mk_param(center, dtype=FLOAT_TORCH_TYPE))
 
-        self.register_parameter("log_weights", torch.nn.Parameter(torch.tensor(trap_widths)))
+        self.register_parameter("log_weights", torch.nn.Parameter(torch.tensor(trap_widths, dtype=FLOAT_TORCH_TYPE)))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         weights = self.log_weights.exp()

@@ -10,6 +10,7 @@ from new_ddpg.input_membership import JointTrapMembership, JointMembership
 from new_ddpg.output_membership import CenterOfMaximum, SymmetricCenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 from vizualize.auto_grad_viz import make_dot
+from new_ddpg import FLOAT_TORCH_TYPE
 
 
 class JointAnfisNet(nn.Module):
@@ -17,8 +18,8 @@ class JointAnfisNet(nn.Module):
                  output_variables,
                  mamdani_ruleset, max_out: List[float], min_out: List[float]):
         super(JointAnfisNet, self).__init__()
-        max_temp = torch.tensor(max_out)
-        min_temp = torch.tensor(min_out)
+        max_temp = torch.tensor(max_out, dtype=FLOAT_TORCH_TYPE)
+        min_temp = torch.tensor(min_out, dtype=FLOAT_TORCH_TYPE)
 
         self.register_buffer("output_scaling", (max_temp - min_temp) / 2)
         self.register_buffer("output_bias", (max_temp + min_temp) / 2)

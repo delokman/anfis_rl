@@ -6,6 +6,8 @@ from torch import nn
 from anfis.joint_membership import _mk_param
 from new_ddpg.input_membership import JointMembership
 
+from new_ddpg import FLOAT_TORCH_TYPE
+
 
 class SymmetricCenterOfMaximum(JointMembership):
     def left_x(self):
@@ -18,11 +20,12 @@ class SymmetricCenterOfMaximum(JointMembership):
         super().__init__(len(output_poses) * 2 + 1)
 
         if constant_center:
-            self.register_buffer("center", torch.tensor([center]))
+            self.register_buffer("center", torch.tensor([center], dtype=FLOAT_TORCH_TYPE))
         else:
-            self.register_parameter('center', _mk_param(center))
+            self.register_parameter('center', _mk_param(center, dtype=FLOAT_TORCH_TYPE))
 
-        self.register_parameter("log_weights", nn.Parameter(torch.log(torch.tensor(output_poses))))
+        self.register_parameter("log_weights",
+                                nn.Parameter(torch.log(torch.tensor(output_poses, dtype=FLOAT_TORCH_TYPE))))
 
     def forward(self, _):
         weights = self.log_weights.exp()
@@ -41,7 +44,8 @@ class CenterOfMaximum(JointMembership):
     def __init__(self, output_poses: List[float]):
         super().__init__(len(output_poses))
 
-        self.register_parameter("log_weights", nn.Parameter(torch.log(torch.tensor(output_poses))))
+        self.register_parameter("log_weights",
+                                nn.Parameter(torch.log(torch.tensor(output_poses, dtype=FLOAT_TORCH_TYPE))))
 
     def forward(self, _):
         weights = self.log_weights.exp()
