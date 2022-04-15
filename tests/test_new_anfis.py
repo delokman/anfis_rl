@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from new_ddpg.input_membership import JointTrapMembership
-from new_ddpg.new_anfis import JointAnfisNet
+from new_anfis import JointAnfisNet
 from new_ddpg.output_membership import SymmetricCenterOfMaximum, CenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 
