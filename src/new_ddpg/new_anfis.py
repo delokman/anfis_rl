@@ -1,10 +1,12 @@
+from typing import List
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from torch import nn, profiler
 
-from new_ddpg.input_membership import JointTrapMembership
+from new_ddpg.input_membership import JointTrapMembership, JointMembership
 from new_ddpg.output_membership import CenterOfMaximum, SymmetricCenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 from vizualize.auto_grad_viz import make_dot
@@ -13,8 +15,14 @@ from vizualize.auto_grad_viz import make_dot
 class JointAnfisNet(nn.Module):
     def __init__(self, input_variables,
                  output_variables,
-                 mamdani_ruleset):
+                 mamdani_ruleset, max_out: List[float], min_out: List[float]):
         super(JointAnfisNet, self).__init__()
+        max_temp = torch.tensor(max_out)
+        min_temp = torch.tensor(min_out)
+
+        self.register_buffer("output_scaling", (max_temp - min_temp) / 2)
+        self.register_buffer("output_bias", (max_temp + min_temp) / 2)
+
         self.input_variables = input_variables
         self.output_variables = output_variables
 
@@ -129,32 +137,104 @@ class JointAnfisNet(nn.Module):
 
         return torch.mm(normalized_weights, output_weights)
 
+    def fuzzyfied_data(self, data, fuzzified):
+        with torch.no_grad():
+            last_num = 0
+
+            for i, membership in enumerate(self.membership_fncs):
+                membership: JointMembership
+
+                x = torch.linspace(membership.left_x(), membership.right_x(), steps=100).reshape((-1, 1)).to(
+                    data.device)
+
+                out = membership(x)
+
+                x_d = data[:, i].repeat((membership.num_outputs, 1)).T
+                next_num = last_num + membership.num_outputs
+
+                out_d = fuzzified[:, last_num:next_num]
+
+                last_num = next_num
+
+                fig, ax = plt.subplots()
+                ax.plot(x.cpu(), out.cpu())
+                ax.scatter(x_d.cpu(), out_d.cpu())
+                plt.show()
+                plt.close(fig)
+
+    def print_rules(self, fuzzified, weights):
+        poses = ['distance_target is Close', "distance_target is Far", "distance_line is Left Edge",
+                 "distance_line is Left", "distance_line is Close Left", "distance_line is Center",
+                 "distance_line is Close Right", "distance_line is Right", "distance_line is Right Edge",
+                 'theta_lookahead is Left Edge', "theta_lookahead is Left", "theta_lookahead is Center",
+                 "theta_lookahead is Right", "theta_lookahead is Right Edge", 'theta_far is Left Edge',
+                 "theta_far is Left", "theta_far is Center", "theta_far is Right", "theta_far is Right Edge",
+                 'theta_near is Left Edge', "theta_near is Left", "theta_near is Center", "theta_near is Right",
+                 "theta_near is Right Edge",
+                 ]
+
+        data = []
+        for r in range(self.input_rules.shape[0]):
+            row = self.input_rules[r]
+
+            for c in range(row.shape[0]):
+                index = row[c].item()
+                data.append(poses[index])
+                a = fuzzified[0, index].item()
+                data.append(" ")
+                data.append(a)
+                data.append(" AND ")
+
+            data = data[:-1]
+            data.append(" IS ")
+            data.append(weights[0, r].item())
+            data.append('\n')
+
+        print("".join(map(str, data)))
+
+    def constrain_scaling(self, defuzzify: torch.Tensor):
+        contained = torch.tanh(defuzzify)
+
+        scaled_constraint = contained * self.output_scaling + self.output_bias
+        return scaled_constraint
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        fuzzyfied: torch.Tensor = self.fuzzify(x)
+        self.fuzzyfied: torch.Tensor = self.fuzzify(x)
+
+        # self.plot_fuzzified(x, self.fuzzyfied)
 
         weights = self.rules(fuzzyfied)
 
-        normalized_weights = F.normalize(weights, p=1, dim=1)
+        self.weights = self.rules(self.fuzzyfied)
 
-        output_weights = self.output_weights(normalized_weights)
-        defuzzify = self.defuzzify(normalized_weights, output_weights)
+        # self.print_rules(self.fuzzyfied, self.weights)
 
-        return defuzzify
+        self.normalized_weights = F.normalize(self.weights, p=1, dim=1)
+
+        self.output_weights = self.output_weights(self.normalized_weights)
+        self.defuzzify = self.defuzzify(self.normalized_weights, self.output_weights)
+
+        self.constrained = self.constrain_scaling(self.defuzzify)
+
+        return self.constrained
+
+    def set_training_mode(self, mode):
+        self.train(mode)
 
 
 def profile():
-    mem1 = JointTrapMembership(0, np.log(np.array([1., 1.])))
-    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1])))
-    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
-    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
-    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem1 = JointTrapMembership(0, np.log(np.array([1.])))
+    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1, 1])))
+    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
+    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
+    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
 
     ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
 
     out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
-    out2 = CenterOfMaximum([0.1, 1., 2.])
+    out2 = CenterOfMaximum([0, 1., 1])
 
-    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset)
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
     # fuzzify = torch.jit.trace_module(a, {"forward": torch.randn((1000, 4))})
 
     B = 1
@@ -211,18 +291,18 @@ def profile():
 
 
 def main_test():
-    mem1 = JointTrapMembership(0, np.log(np.array([1., 1.])))
-    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1])))
-    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
-    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
-    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1])))
+    mem1 = JointTrapMembership(0, np.log(np.array([1.])))
+    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1, 1])))
+    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
+    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
+    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
 
     ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
 
     out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
-    out2 = CenterOfMaximum([0.1, 1., 2.])
+    out2 = CenterOfMaximum([0, 1., 1])
 
-    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset)
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
     anfis.cuda()
     # fuzzify = torch.jit.trace_module(a, {"forward": torch.randn((1000, 4))})
 
