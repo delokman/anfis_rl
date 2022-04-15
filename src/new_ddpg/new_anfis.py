@@ -307,17 +307,53 @@ def profile():
     plt.show()
 
 
+def min_max_num_trapezoids(min_v, max_v, num):
+    c = (min_v + max_v) / 2
+
+    num = num - 1
+
+    num = np.full(num, (max_v - c) / num)
+    num[0] /= 2
+
+    return c, np.log(num)
+
+
+def min_max_num_center_of_max(min_v, max_v, num):
+    steps = (max_v - min_v) / (num - 1)
+
+    num = np.full(num, steps)
+
+    if min_v <= 0:
+        min_v = 1e-6
+
+    num[0] = min_v
+
+    return num
+
+
+def min_max_num_symmetric_center_of_max(min_v, max_v, num):
+    c = (max_v + min_v) / 2
+
+    num = (num - 1) // 2
+
+    steps = (max_v - c) / num
+
+    num = np.full(num, steps)
+
+    return c, num
+
+
 def main_test():
-    mem1 = JointTrapMembership(0, np.log(np.array([1.])))
-    mem2 = JointTrapMembership(0, np.log(np.array([1., 1., 1., 1, 1, 1])))
-    mem3 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
-    mem4 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
-    mem5 = JointTrapMembership(0, np.log(np.array([1., 1., 1, 1])))
+    mem1 = JointTrapMembership(*min_max_num_trapezoids(0, 1, 2))
+    mem2 = JointTrapMembership(*min_max_num_trapezoids(-1, 1, 7))
+    mem3 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
+    mem4 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
+    mem5 = JointTrapMembership(*min_max_num_trapezoids(-np.pi, np.pi, 5))
 
     ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
 
-    out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
-    out2 = CenterOfMaximum([0, 1., 1])
+    out1 = SymmetricCenterOfMaximum(*min_max_num_symmetric_center_of_max(-4, 4, 9))
+    out2 = CenterOfMaximum(min_max_num_center_of_max(0, 2, 3))
 
     anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
     anfis.cuda()
