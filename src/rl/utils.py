@@ -11,19 +11,20 @@ def fuzzy_error(curr, tar, future, robot):
 
     pose = np.array([x, y])
 
-    A = np.array([[curr[1] - tar[1], tar[0] - curr[0]], [tar[0] - curr[0], tar[1] - curr[1]]])
-    b = np.array([[tar[0] * curr[1] - curr[0] * tar[1]], [x * (tar[0] - curr[0]) + y * (tar[1] - curr[1])]])
-    proj = np.matmul(np.linalg.inv(A), b)
-    d = (x - curr[0]) * (tar[1] - curr[1]) - (y - curr[1]) * (tar[0] - curr[0])
+    b = tar - curr
+    a = pose - curr
 
-    side = np.sign(d)
+    proj = np.dot(a, b) / np.dot(b, b) * b + curr
 
-    distance_line = np.linalg.norm(pose - proj.T, 2) * side  ##########################check this
+    norm = np.array([-b[1], b[0]])
+    norm /= np.linalg.norm(norm)
+
+    distance_line = np.dot(norm, a)
     distance_target = np.linalg.norm(tar - pose)
 
     k = 0.9
 
-    far_target = np.array([k * proj[0] + (1 - k) * tar[0], k * proj[1] + (1 - k) * tar[1]])
+    far_target = k * proj + (1 - k) * tar
     th1 = math.atan2(far_target[1] - y, far_target[0] - x)
     th2 = math.atan2(tar[1] - curr[1], tar[0] - curr[0])
     th3 = math.atan2(future[1] - tar[1], future[0] - tar[0])
