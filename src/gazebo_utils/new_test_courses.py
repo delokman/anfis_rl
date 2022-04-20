@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 
+import bezier
+
 
 def z_course(segment_length, start_angle=0, end_angle=180, step_angle=15):
     num = int(np.ceil((end_angle - start_angle) / step_angle)) + 1
@@ -97,6 +99,32 @@ def courses_double_circle(n, r1=0.5, r2=1.):
         points.append([cx + r2 * np.cos(i), cy + r2 * np.sin(i)])
 
     return points
+
+
+def random_points(n_point=100, n_segments=100):
+    p = [
+        np.array([0, 0]),
+        np.array([1, 0])
+    ]
+
+    for i in range(n_point):
+        pprev = p[-2]
+        prev = p[-1]
+
+        t_prev = np.arctan2(prev[1] - pprev[1], prev[0] - pprev[0])
+
+        t = np.random.normal(0, np.deg2rad(90)) + t_prev
+        r = np.random.normal(1, .5)
+
+        x = np.cos(t) * r
+        y = np.sin(t) * r
+
+        p.append(prev + np.array([x, y]))
+
+    points = np.array(p)
+    curve = bezier.curve.Curve.from_nodes(points.T)
+
+    return curve.evaluate_multi(np.linspace(0, 1, n_segments)).T
 
 
 if __name__ == '__main__':
