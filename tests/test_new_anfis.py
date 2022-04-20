@@ -108,6 +108,18 @@ class TestNewANFIS(unittest.TestCase):
         self.assertAlmostEqual(out[0, 0].item(), -4.)
         self.assertAlmostEqual(out[0, 1].item(), 0.)
 
+        x = torch.Tensor([[0, 0, 0, 0, 0]])
+        out = self.anfis(x)
+
+        self.assertAlmostEqual(out[0, 0].item(), 0)
+        self.assertAlmostEqual(out[0, 1].item(), 2)
+
+        x = torch.Tensor([[100, 100, 100, 100, 100]])
+        out = self.anfis(x)
+
+        self.assertAlmostEqual(out[0, 0].item(), 4)
+        self.assertAlmostEqual(out[0, 1].item(), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
