@@ -183,6 +183,6 @@ def new_anfis_many_error_with_velocity():
     out1 = SymmetricCenterOfMaximum(*min_max_num_symmetric_center_of_max(-4, 4, 9))
     out2 = CenterOfMaximum(min_max_num_center_of_max(.2, 2, 3))
 
-    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
+    anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [0, 0], [4, 2])
 
     return anfis

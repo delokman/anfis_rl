@@ -16,13 +16,10 @@ from new_ddpg import FLOAT_TORCH_TYPE
 class JointAnfisNet(nn.Module):
     def __init__(self, input_variables,
                  output_variables,
-                 mamdani_ruleset, max_out: List[float], min_out: List[float]):
+                 mamdani_ruleset, tanh_centers: List[float], tanh_scale: List[float]):
         super(JointAnfisNet, self).__init__()
-        max_temp = torch.tensor(max_out, dtype=FLOAT_TORCH_TYPE)
-        min_temp = torch.tensor(min_out, dtype=FLOAT_TORCH_TYPE)
-
-        self.register_buffer("output_scaling", (max_temp - min_temp) / 2)
-        self.register_buffer("output_bias", (max_temp + min_temp) / 2)
+        self.register_buffer("output_scaling", torch.tensor(tanh_scale, dtype=FLOAT_TORCH_TYPE))
+        self.register_buffer("output_bias", torch.tensor(tanh_centers, dtype=FLOAT_TORCH_TYPE))
 
         self.input_variables = input_variables
         self.output_variables = output_variables

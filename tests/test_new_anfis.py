@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from new_ddpg.input_membership import JointTrapMembership
-from new_anfis import JointAnfisNet
+from new_ddpg.new_anfis import JointAnfisNet
 from new_ddpg.output_membership import SymmetricCenterOfMaximum, CenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 
@@ -19,10 +19,10 @@ class TestNewANFIS(unittest.TestCase):
 
         ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel()
 
-        out1 = SymmetricCenterOfMaximum(0., [1., 1., 1., 1.])
-        out2 = CenterOfMaximum([0, 1., 1])
+        out1 = SymmetricCenterOfMaximum(0., [10., 10., 10., 10.])
+        out2 = CenterOfMaximum([0, 10., 10])
 
-        self.anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [4, 2], [-4, 0])
+        self.anfis = JointAnfisNet([mem1, mem2, mem3, mem4, mem5], [out1, out2], ruleset, [0, 0], [4, 2])
         self.anfis.set_training_mode(False)
 
     def test_input_rules(self):
