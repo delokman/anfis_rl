@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from new_test_courses import z_course, straight_line, curved_z
 from pauser import BluetoothEStop
+from reward_sam import reward_sam
 from rl.checkpoint_storage import LowestCheckpoint
 from rl.noise import OUNoise
 from test_course import test_course3
@@ -473,7 +474,7 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
 
             jackal.control_law = control_law
             jackal.linear_velocity = velocity
-
+            reward = reward_sam(agent.actor)
             rewards, comps = reward(path_errors, jackal.linear_velocity, control_law, params)
             rewards_cummulative.append(rewards)
             reward_components.append(comps)
@@ -640,24 +641,9 @@ if __name__ == '__main__':
         }
 
         reward_scales = {
-            'reward_scale': 15.,
-            'DE_penalty_gain': 25 / 1.5,
-            'DE_penalty_shape': 1,
-            'HE_penalty_gain': 25 * 2,
-            'HE_penalty_shape': 3,
-            'HE_iwrt_DE': 2,
-            'vel_reward_gain': 2,
-            'vel_iwrt_DE': 1,
-            'steering_penalty_gain': 4,
-            'steering_iwrt_DE': 4,
-            'dis_scale': 1,
-            'sigmoid_near': 25,
-            'scale_near': -15 / 100,
-            'sigmoid_recovery': 4.5,
-            'scale_recovery': -1.5 / 12,
-            'exp_lookahead': 1,
-            'scale_lookahead': -100 / 2 / 1.5,
-            'max_angular_vel': 4,
+            'dis_gain': 0.25,
+            'theta_near_gain': 0.25,
+            'theta_recovery_gain': 0.25
         }
 
         params.update(reward_scales)
