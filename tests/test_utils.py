@@ -29,7 +29,7 @@ class TestUtils(unittest.TestCase):
         distance_target, distance_line, theta_lookahead, theta_far, theta_near = fuzzy_error(curr, tar, fut, r)
 
         self.assertAlmostEqual(distance_target, np.sqrt(2))
-        # self.assertAlmostEqual(distance_line, 1.)
+        self.assertAlmostEqual(distance_line, 1.)
         self.assertAlmostEqual(theta_near, 0.)
         self.assertAlmostEqual(theta_lookahead, 0.0)
 
