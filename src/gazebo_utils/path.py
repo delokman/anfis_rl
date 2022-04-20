@@ -58,6 +58,8 @@ class Path:
 
         continue_search = True
 
+        traveled = {}
+
         while continue_search:
 
             current_point = np.array(self.path[self.path_count])
@@ -82,16 +84,7 @@ class Path:
             temp2 = target - current_point
             proj_len = (temp1[0] * temp2[0] + temp1[1] * temp2[1]) / np.linalg.norm(target - current_point, 2) ** 2
 
-            if proj_len > 1:
-                self.path_count += 1
-
-                if progress_bar is not None:
-                    progress_bar.update()
-            else:
-                continue_search = False
-
-            if self.path_count == self.path_length - 1:
-                self.stop = True
+            distance_line = -np.linalg.norm(proj - proj.T, 2)
 
             if (self.path_count == (self.path_length - 2)) or (self.path_count == (self.path_length - 1)):
                 curr = np.array(self.path[self.path_count])
@@ -101,6 +94,39 @@ class Path:
                 curr = np.array(self.path[self.path_count])
                 tar = np.array(self.path[self.path_count + 1])
                 future = np.array(self.path[self.path_count + 2])
+
+            traveled[self.path_count] = [abs(distance_line), curr, tar, future]
+
+            if proj_len > 1:
+                self.path_count += 1
+
+                if progress_bar is not None:
+                    progress_bar.update()
+            elif self.path_count != 0 and proj_len < 0:
+                self.path_count -= 1
+
+                if self.path_count < 0:
+                    self.path_count = 0
+            else:
+                continue_search = False
+
+            if self.path_count in traveled:
+                break
+
+            if self.path_count == self.path_length - 1:
+                self.stop = True
+
+        min_index = list(traveled.keys())
+
+        min_val = traveled[min_index[0]]
+
+        for i in range(1, len(min_index)):
+            data = traveled[min_index[i]]
+
+            if data[0] < min_val[0]:
+                min_val = data
+
+        _, curr, tar, future = min_val
 
         if self.transform is not None:
             curr = self.transform @ np.append(curr, 1)
