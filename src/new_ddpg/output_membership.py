@@ -35,7 +35,7 @@ class SymmetricCenterOfMaximum(JointMembership):
         weights = self.log_weights.exp()
         total = torch.cumsum(weights, 0)
 
-        return torch.concat((self.center + total.flip([0]), self.center, self.center - total))
+        return torch.concat((self.center - total.flip([0]), self.center, self.center + total))
 
 
 class CenterOfMaximum(JointMembership):

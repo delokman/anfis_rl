@@ -93,6 +93,8 @@ class JointAnfisNet(nn.Module):
         start_output_indexes[0] = 0
 
         outputs_membership = torch.tensor(rules['outputs_membership'])
+        outputs_membership = torch.max(outputs_membership) - outputs_membership
+
         outputs_membership_velocity = torch.tensor(rules['outputs_membership_velocity'])
 
         output_rules = torch.cat((outputs_membership, outputs_membership_velocity), dim=1) + start_output_indexes
