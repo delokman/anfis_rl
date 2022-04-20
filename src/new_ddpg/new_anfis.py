@@ -236,18 +236,18 @@ class JointAnfisNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         self.fuzzyfied: torch.Tensor = self.fuzzify(x)
 
-        # self.plot_fuzzified(x, self.fuzzyfied)
-
-        # self.fuzzyfied_data(x, self.fuzzyfied)
+        # self.plot_fuzzified()
 
         self.weights = self.rules(self.fuzzyfied)
 
-        # self.print_rules(self.fuzzyfied, self.weights)
+        # self.plot_outputs()
 
         self.normalized_weights = F.normalize(self.weights, p=1, dim=1)
 
         self.output_weights = self.get_output_weights(self.normalized_weights)
         self.defuzzify_out = self.defuzzify(self.normalized_weights, self.output_weights)
+
+        # self.print_rules(self.fuzzyfied, self.weights, self.output_weights)
 
         self.constrained = self.constrain_scaling(self.defuzzify_out)
 
