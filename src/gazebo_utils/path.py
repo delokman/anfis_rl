@@ -1,5 +1,7 @@
 import numpy as np
 
+from gazebo_utils.new_test_courses import random_points
+
 
 def extend_path(path: list):
     """
@@ -177,3 +179,13 @@ class Path:
         poses = (path @ self.inverse_transform[:, :, None]).squeeze(-1).T
 
         return poses
+
+
+class RandomPath(Path):
+    def __init__(self, *args):
+        super().__init__(random_points())
+
+    def reset(self):
+        super().reset()
+        self.path = random_points()
+        self.estimated_path_length = self.calcualte_estimated_path_length()
