@@ -22,7 +22,7 @@ def fuzzy_error(curr, tar, future, robot):
     distance_line = np.dot(norm, a)
     distance_target = np.linalg.norm(tar - pose)
 
-    k = 0.9
+    k = 0.95
 
     far_target = k * proj + (1 - k) * tar
     th1 = math.atan2(far_target[1] - y, far_target[0] - x)
