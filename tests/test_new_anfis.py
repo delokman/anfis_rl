@@ -66,6 +66,13 @@ class TestNewANFIS(unittest.TestCase):
         print(out)
         print(self.anfis.normalized_weights)
 
+    def test_output_constraint(self):
+        x = torch.Tensor([[-100, -100, -100, -100, -100]])
+        out = self.anfis(x)
+
+        self.assertAlmostEqual(out[0, 0].item(), -4.)
+        self.assertAlmostEqual(out[0, 1].item(), 0.)
+
 
 if __name__ == '__main__':
     unittest.main()
