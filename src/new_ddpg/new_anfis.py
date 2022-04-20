@@ -164,7 +164,7 @@ class JointAnfisNet(nn.Module):
                 plt.show()
                 plt.close(fig)
 
-    def print_rules(self, fuzzified, weights):
+    def print_rules(self, fuzzified, weights, output_weights):
         poses = ['distance_target is Close', "distance_target is Far", "distance_line is Left Edge",
                  "distance_line is Left", "distance_line is Close Left", "distance_line is Center",
                  "distance_line is Close Right", "distance_line is Right", "distance_line is Right Edge",
@@ -175,7 +175,14 @@ class JointAnfisNet(nn.Module):
                  "theta_near is Right Edge",
                  ]
 
+        outs = ['angular_vel is Very Hard Left', 'angular_vel is Hard Left', 'angular_vel is Left',
+                'angular_vel is Soft Left', 'angular_vel is Zero', 'angular_vel is Soft Right', 'angular_vel is Right',
+                'angular_vel is Hard Right', 'angular_vel is Very Hard Right', "vel is Slow", 'vel is Medium',
+                'vel is Fast']
+
         data = []
+        n_outs = self.output_rules.shape[1]
+
         for r in range(self.input_rules.shape[0]):
             row = self.input_rules[r]
 
@@ -190,6 +197,18 @@ class JointAnfisNet(nn.Module):
             data = data[:-1]
             data.append(" IS ")
             data.append(weights[0, r].item())
+            data.append(" THEN ")
+
+            row = self.output_rules[r]
+            for c in range(n_outs):
+                index = row[c].item()
+                data.append(outs[index])
+                data.append(" ")
+                a = output_weights[index].item()
+                data.append(a)
+                data.append(" AND ")
+
+            data = data[:-1]
             data.append('\n')
 
         print("".join(map(str, data)))
