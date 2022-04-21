@@ -60,6 +60,9 @@ class Path:
 
         traveled = {}
 
+        changed_sign = None
+        changed = False
+
         while continue_search:
 
             current_point = np.array(self.path[self.path_count])
@@ -84,9 +87,11 @@ class Path:
             temp2 = target - current_point
             proj_len = (temp1[0] * temp2[0] + temp1[1] * temp2[1]) / np.linalg.norm(target - current_point, 2) ** 2
 
-            distance_line = -np.linalg.norm(proj - proj.T, 2)
+            distance_line = np.linalg.norm(proj - np.array([[pos_x], [pos_y]]), 2)
 
-            if (self.path_count == (self.path_length - 2)) or (self.path_count == (self.path_length - 1)):
+            temp = self.path_count
+
+            if (self.path_count == (self.path_length - 1)):
                 curr = np.array(self.path[self.path_count])
                 tar = np.array(self.path[self.path_count + 1])
                 future = np.array(self.path[self.path_count + 1])
@@ -95,38 +100,53 @@ class Path:
                 tar = np.array(self.path[self.path_count + 1])
                 future = np.array(self.path[self.path_count + 2])
 
-            traveled[self.path_count] = [abs(distance_line), curr, tar, future]
+            if self.path_count == self.path_length - 1:
+                self.stop = True
+                continue_search = False
 
             if proj_len > 1:
                 self.path_count += 1
 
                 if progress_bar is not None:
                     progress_bar.update()
+
+                if changed_sign is None:
+                    changed_sign = 1
+                elif changed_sign < 0:
+                    changed_sign = 11
+                    changed = True
+
             elif self.path_count != 0 and proj_len < 0:
                 self.path_count -= 1
 
                 if self.path_count < 0:
                     self.path_count = 0
+
+                if changed_sign is None:
+                    changed_sign = -1
+                elif changed_sign > 0:
+                    changed_sign = -1
+                    changed = True
             else:
                 continue_search = False
 
+            traveled[temp] = [abs(distance_line), curr, tar, future]
+
             if self.path_count in traveled:
-                break
+                continue_search = False
 
-            if self.path_count == self.path_length - 1:
-                self.stop = True
+        if changed:
+            min_index = list(traveled.keys())
 
-        min_index = list(traveled.keys())
+            min_val = traveled[min_index[0]]
 
-        min_val = traveled[min_index[0]]
+            for i in range(1, len(min_index)):
+                data = traveled[min_index[i]]
 
-        for i in range(1, len(min_index)):
-            data = traveled[min_index[i]]
+                if data[0] < min_val[0]:
+                    min_val = data
 
-            if data[0] < min_val[0]:
-                min_val = data
-
-        _, curr, tar, future = min_val
+            _, curr, tar, future = min_val
 
         if self.transform is not None:
             curr = self.transform @ np.append(curr, 1)
