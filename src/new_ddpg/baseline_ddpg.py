@@ -10,14 +10,60 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat, Figure
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.td3.td3 import TD3
+from torch.utils.tensorboard import SummaryWriter
 
-from anfis.utils import plot_model_weights, plot_fuzzy_variables
+from anfis.utils import plot_model_weights
 from gazebo_utils.test_course import test_course3
-from main import plot_anfis_model_data
 from new_ddpg.jackal_gym import GazeboJackalEnv
 from new_ddpg.policy import TD3Policy
 from rl.utils import Reward
 from torch.utils.tensorboard.summary import hparams
+
+
+def plot_fuzzy_consequent(summary, anfis, epoch):
+    with torch.no_grad():
+        output_names = ["Consequent/Mamdani", 'Consequent/Velocity Mamdani']
+
+        index = 0
+        for fig in anfis.plot_outputs():
+            summary.add_figure(output_names[index], fig, global_step=epoch)
+            index += 1
+
+
+def plot_fuzzy_membership_functions(summary, anfis, epoch):
+    with torch.no_grad():
+        output_names = ["Membership/distance_target", 'Membership/distance_line', 'Membership/theta_lookahead',
+                        'Membership/theta_far', 'Membership/theta_near']
+
+        index = 0
+        for fig in anfis.plot_fuzzified():
+            summary.add_figure(output_names[index], fig, global_step=epoch)
+            index += 1
+
+
+def plot_fuzzy_variables(summary, anfis, epoch):
+    with torch.no_grad():
+        var_name = ["distance_target", 'distance_line', 'theta_lookahead',
+                    'theta_far', 'theta_near']
+
+        for i, fv in enumerate(anfis.membership_fncs):
+            for p in fv.named_parameters():
+                summary.add_scalar(f"{var_name}/{p[0]}", p[1], epoch)
+
+        for name, value in model.layer['consequent'].mamdani_defs.named_parameters():
+            summary.add_scalar(f"Consequent/Mamdani", value, epoch)
+
+        for name, value in model.layer['consequent'].mamdani_defs_vel.named_parameters():
+            summary.add_scalar(f"Consequent/Vel {name}", value, epoch)
+
+
+def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis, variable_tensorboard_logging=True):
+    with torch.no_grad():
+        plot_fuzzy_consequent(summary, anfis, epoch)
+        plot_fuzzy_membership_functions(summary, anfis, epoch)
+        #
+        if variable_tensorboard_logging:
+            plot_fuzzy_variables(summary, anfis, epoch)
 
 
 def create_env():
@@ -80,33 +126,34 @@ class TensorboardCallback(BaseCallback):
         using the current policy.
         This event is triggered before collecting new samples.
         """
-        output_formats = self.logger.output_formats
-        # note: the failure case (not formatter found) is not handled here, should be done with try/except.
-        self.tb_formatter: TensorBoardOutputFormat = next(
-            formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
+        with torch.no_grad():
+            output_formats = self.logger.output_formats
+            # note: the failure case (not formatter found) is not handled here, should be done with try/except.
+            self.tb_formatter: TensorBoardOutputFormat = next(
+                formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
 
-        plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, -1)
-        # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, -1)
-        plot_anfis_model_data(self.tb_formatter.writer, -1, self.model.policy.actor)
-        # plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor_target)
+            plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, -1)
+            # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, -1)
+            # plot_anfis_model_data(self.tb_formatter.writer, -1, self.model.policy.actor)
+            # plot_anfis_model_data(self.tb_formatter.writer, -1, model.policy.actor_target)
 
-        env: GazeboJackalEnv = self.model.env.envs[0]
+            env: GazeboJackalEnv = self.model.env.envs[0]
 
-        fnc = env.reward_fnc
+            fnc = env.reward_fnc
 
-        if not inspect.isfunction(fnc) and not isinstance(fnc, type):
-            fnc = fnc.__class__
+            if not inspect.isfunction(fnc) and not isinstance(fnc, type):
+                fnc = fnc.__class__
 
-        code = f"""```python\n{inspect.getsource(fnc)}```"""
+            code = f"""```python\n{inspect.getsource(fnc)}```"""
 
-        self.tb_formatter.writer.add_text("Reward Function", code)
+            self.tb_formatter.writer.add_text("Reward Function", code)
 
-        exp, ssi, sei = hparams(env.config,  {'rollout/ep_rew_mean': 0.0})
-        self.tb_formatter.writer.file_writer.add_summary(exp)
-        self.tb_formatter.writer.file_writer.add_summary(ssi)
-        self.tb_formatter.writer.file_writer.add_summary(sei)
+            exp, ssi, sei = hparams(env.config, {'rollout/ep_rew_mean': 0.0})
+            self.tb_formatter.writer.file_writer.add_summary(exp)
+            self.tb_formatter.writer.file_writer.add_summary(ssi)
+            self.tb_formatter.writer.file_writer.add_summary(sei)
 
-        self.tb_formatter.writer.flush()
+            self.tb_formatter.writer.flush()
 
     def _on_rollout_start(self) -> None:
         del self.velocities, self.distance_errors, self.poses
@@ -125,86 +172,88 @@ class TensorboardCallback(BaseCallback):
         :return: (bool) If the callback returns False, training is aborted early.
         """
 
-        self.logger: Logger
+        with torch.no_grad():
+            self.logger: Logger
 
-        obs = self.locals['new_obs']
-        act = self.locals['action']
+            obs = self.locals['new_obs']
+            act = self.locals['action']
 
-        robot = self.model.env.envs[0].robot
+            robot = self.model.env.envs[0].robot
 
-        self.poses.append(robot.get_pose())
+            self.poses.append(robot.get_pose())
 
-        reward_components = self.locals['infos'][0]['components']
+            reward_components = self.locals['infos'][0]['components']
 
-        for ob_name, ob in zip(self.obs_name, obs[0]):
-            self.logger.record(ob_name, ob, exclude=("stdout",))
+            for ob_name, ob in zip(self.obs_name, obs[0]):
+                self.logger.record(ob_name, ob, exclude=("stdout",))
 
-            if "Distance Error" in ob_name:
-                self.distance_errors.append(ob)
+                if "Distance Error" in ob_name:
+                    self.distance_errors.append(ob)
 
-        for act_name, act in zip(self.act_name, act[0]):
-            self.logger.record(act_name, act, exclude=("stdout",))
+            for act_name, act in zip(self.act_name, act[0]):
+                self.logger.record(act_name, act, exclude=("stdout",))
 
-            if "Velocity" in act_name:
-                self.velocities.append(act)
+                if "Velocity" in act_name:
+                    self.velocities.append(act)
 
-        if self.n_calls % self._param_log == 0:
-            print(self.num_timesteps)
-            plot_fuzzy_variables(self.tb_formatter.writer, self.model.policy.actor, self.num_timesteps)
+            # if self.n_calls % self._param_log == 0:
+            #     print(self.num_timesteps)
+            #     plot_fuzzy_variables(self.tb_formatter.writer, self.model.policy.actor, self.num_timesteps)
 
-        for key, l in reward_components.items():
-            self.tb_formatter.writer.add_scalar(f"Reward/{key}", l, global_step=self.num_timesteps)
+            for key, l in reward_components.items():
+                self.tb_formatter.writer.add_scalar(f"Reward/{key}", l, global_step=self.num_timesteps)
 
-            self.tb_formatter.writer.flush()
+                self.tb_formatter.writer.flush()
 
-        if self.n_calls % self._log_freq == 0:
-            self.logger.dump(self.num_timesteps)
+            if self.n_calls % self._log_freq == 0:
+                self.logger.dump(self.num_timesteps)
 
-        return True
+            return True
 
     def _on_rollout_end(self) -> None:
         """
         This event is triggered before updating the policy.
         """
-        plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, self.epoch_num)
-        # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, self.epoch_num)
-        plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, self.model.policy.actor,
-                              variable_tensorboard_logging=False)
-        # plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, model.policy.actor_target)
+        with torch.no_grad():
+            plot_model_weights(self.tb_formatter.writer, self.model.policy.critic, self.epoch_num)
+            # plot_model_weights(self.tb_formatter.writer, model.policy.critic_target, self.epoch_num)
+            plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, self.model.policy.actor,
+                                  variable_tensorboard_logging=False)
+            # plot_anfis_model_data(self.tb_formatter.writer, self.epoch_num, model.policy.actor_target)
 
-        distance_errors = np.asarray(self.distance_errors)
+            distance_errors = np.asarray(self.distance_errors)
 
-        max_distance_error = np.max(distance_errors)
-        dist_error_mae = np.mean(np.abs(distance_errors))
-        dist_error_rmse = np.sqrt(np.mean(np.power(distance_errors, 2)))
-        avg_velocity = np.mean(self.velocities)
+            max_distance_error = np.max(distance_errors)
+            dist_error_mae = np.mean(np.abs(distance_errors))
+            dist_error_rmse = np.sqrt(np.mean(np.power(distance_errors, 2)))
+            avg_velocity = np.mean(self.velocities)
 
-        output = {"Logs/Dist Error MAE": dist_error_mae,
-                  "Logs/Dist Error RSME": dist_error_rmse,
-                  "Logs/Dist Error Max": max_distance_error,
-                  "Logs/Average Velocity": avg_velocity,
-                  }
+            output = {"Logs/Dist Error MAE": dist_error_mae,
+                      "Logs/Dist Error RSME": dist_error_rmse,
+                      "Logs/Dist Error Max": max_distance_error,
+                      "Logs/Average Velocity": avg_velocity,
+                      }
 
-        excl = {i: None for i in output.keys()}
+            excl = {i: None for i in output.keys()}
 
-        self.tb_formatter.write(output, key_excluded=excl, step=self.epoch_num)
+            self.tb_formatter.write(output, key_excluded=excl, step=self.epoch_num)
 
-        env: GazeboJackalEnv = self.locals['env'].envs[0]
-        # plot
-        test_path = np.array(env.path.path)
-        robot_path = env.path.inverse_transform_poses(self.poses)
+            env: GazeboJackalEnv = self.locals['env'].envs[0]
+            # plot
+            test_path = np.array(env.path.path)
+            robot_path = env.path.inverse_transform_poses(self.poses)
 
-        fig, ax = plt.subplots()
-        ax.set_aspect('equal')
-        ax.plot(test_path[:-1, 0], test_path[:-1, 1])
-        del test_path
-        ax.plot(robot_path[:, 0], robot_path[:, 1])
-        del robot_path
-        fig.tight_layout()
-        self.logger.record("Path/Plot", Figure(fig, close=True), exclude=("stdout", "log", "json", "csv"))
-        plt.close(fig)
+            fig, ax = plt.subplots()
+            ax.set_aspect('equal')
+            ax.plot(test_path[:-1, 0], test_path[:-1, 1])
+            del test_path
+            ax.plot(robot_path[:, 0], robot_path[:, 1])
+            del robot_path
+            fig.tight_layout()
+            self.tb_formatter.writer.add_figure("Path/Plot", fig, global_step=self.epoch_num)
+            plt.close(fig)
 
-        self.epoch_num += 1
+            self.epoch_num += 1
 
 
 if __name__ == '__main__':
