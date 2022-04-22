@@ -6,7 +6,7 @@ from torch import nn
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size, fcs1_units=32, fc2_units=16):
+    def __init__(self, state_size: int, action_size: int, fcs1_units: int = 32, fc2_units: int = 16) -> None:
         """Initialize parameters and build model.
         Params
         ======
@@ -21,7 +21,7 @@ class Critic(nn.Module):
         self.linear2 = nn.Linear(fcs1_units + action_size, fc2_units)
         self.linear3 = nn.Linear(fc2_units, 1)
 
-    def forward(self, state, action):
+    def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         """Build a critic (value) network that maps (state, action) pairs -> Q-values."""
         xs = F.elu(self.linear1(state))
         x = torch.cat((xs, action), dim=1)

@@ -69,6 +69,13 @@ def make_dot(var, params, parameter_values=None):
     Blue nodes are the Variables that require grad, orange are Tensors
     saved for backward in torch.autograd.Function
 
+    Example implementation
+
+    >>> model = CNN()
+    >>> policy_loss = loss_fnc(y, y_pred)
+    >>> g = make_dot(policy_loss, dict(model.named_parameters()))
+    >>> g.view()
+
     Args:
         var: output Variable
         params: dict of (name, Variable) to add names to node that

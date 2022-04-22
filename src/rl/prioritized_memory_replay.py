@@ -2,6 +2,7 @@
 # https://github.com/Guillaume-Cr/lunar_lander_per/blob/master/replay_buffer.py
 
 import random
+from typing import Tuple, Sequence, List
 
 import numpy as np
 
@@ -9,7 +10,11 @@ from rl.segment_tree import SumSegmentTree, MinSegmentTree
 
 
 class ReplayBuffer(object):
-    def __init__(self, size):
+    """
+    An implementation of the uniform sampling experience technique
+    """
+
+    def __init__(self, size: int) -> None:
         """Create Replay buffer.
         Parameters
         ----------
@@ -21,10 +26,11 @@ class ReplayBuffer(object):
         self._maxsize = size
         self._next_idx = 0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._storage)
 
-    def push(self, obs_t, action, reward, obs_tp1, done):
+    def push(self, obs_t: np.ndarray, action: np.ndarray, reward: np.ndarray, obs_tp1: np.ndarray,
+             done: np.ndarray) -> None:
         data = (obs_t, action, np.array([reward]), obs_tp1, done)
 
         if self._next_idx >= len(self._storage):
@@ -33,7 +39,7 @@ class ReplayBuffer(object):
             self._storage[self._next_idx] = data
         self._next_idx = (self._next_idx + 1) % self._maxsize
 
-    def _encode_sample(self, idxes):
+    def _encode_sample(self, idxes: Sequence[int]):
         obses_t, actions, rewards, obses_tp1, dones = [], [], [], [], []
         for i in idxes:
             data = self._storage[i]
@@ -45,7 +51,8 @@ class ReplayBuffer(object):
             dones.append(done)
         return obses_t, actions, rewards, obses_tp1, dones
 
-    def sample(self, batch_size, *args):
+    def sample(self, batch_size: int, *args) -> Tuple[List[np.ndarray], List[np.ndarray],
+                                                      List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
         """Sample a batch of experiences.
         Parameters
         ----------
@@ -70,7 +77,11 @@ class ReplayBuffer(object):
 
 
 class PrioritizedReplayBuffer(ReplayBuffer):
-    def __init__(self, size, alpha, beta):
+    """
+    Priority Experience Memory Replay
+    """
+
+    def __init__(self, size: int, alpha: float, beta: float) -> None:
         """Create Prioritized Replay buffer.
         Parameters
         ----------
@@ -101,14 +112,14 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         self._it_min = MinSegmentTree(it_capacity)
         self._max_priority = 1.0
 
-    def push(self, *args, **kwargs):
+    def push(self, *args, **kwargs) -> None:
         """See ReplayBuffer.store_effect"""
         idx = self._next_idx
         super().push(*args, **kwargs)
         self._it_sum[idx] = self._max_priority ** self._alpha
         self._it_min[idx] = self._max_priority ** self._alpha
 
-    def _sample_proportional(self, batch_size):
+    def _sample_proportional(self, batch_size: int) -> List[int]:
         res = []
         p_total = self._it_sum.sum(0, len(self._storage) - 1)
         every_range_len = p_total / batch_size
@@ -118,7 +129,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             res.append(idx)
         return res
 
-    def sample(self, batch_size, *args):
+    def sample(self, batch_size: int, *args):
         """Sample a batch of experiences.
         compared to ReplayBuffer.sample
         it also returns importance weights and idxes
@@ -161,7 +172,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         encoded_sample = self._encode_sample(idxes)
         return tuple(list(encoded_sample) + [weights, idxes])
 
-    def update_priorities(self, idxes, priorities):
+    def update_priorities(self, idxes: List[int], priorities: List[float]) -> None:
         """Update priorities of sampled transitions.
         sets priority of transition at index idxes[i] in buffer
         to priorities[i].

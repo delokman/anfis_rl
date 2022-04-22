@@ -1,11 +1,26 @@
 import math
+from typing import Any, List
 
 import numpy as np
 
 from gazebo_utils.utils import wraptopi
 
 
-def fuzzy_error(curr, tar, future, robot):
+def fuzzy_error(curr: np.ndarray, tar: np.ndarray, future: np.ndarray, robot: Any) -> List[float, float, float,
+                                                                                           float, float]:
+    """
+    Calculates the state errors given the current robot position and the current, future and target waypoints
+    :param curr: the current waypoint
+    :param tar: the target waypoint that is trying to be reached
+    :param future: the next waypoint after the target waypoint
+    :param robot: a class that returns the pose and the angle and the current agen state
+    :returns:
+        - distance_target the euclidian distance between the robot's position and the target position
+        - distance_line the shortest perpendicular distance between the curr->tar vector and the robot position
+        - theta_lookahead the angle difference between the future angle heading (tar->future) and the agent's heading
+        - theta_far the angle difference between the recovery projection point and the agent's heading
+        - theta_near the angle difference between the current line segment (curr->tar) and the agent's heading
+    """
     x, y = robot.get_pose()
     current_angle = robot.get_angle()
 

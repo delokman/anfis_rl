@@ -1,5 +1,6 @@
 import copy
 import pathlib
+from typing import Sequence, Union, Tuple, Optional
 
 import numpy as np
 import torch
@@ -14,9 +15,36 @@ from rl.prioritized_memory_replay import PrioritizedReplayBuffer
 
 
 class DDPGAgent(torch.nn.Module):
-    def __init__(self, num_inputs, num_outputs, anf, hidden_size=32, actor_learning_rate=1e-4,
-                 critic_learning_rate=1e-5, gamma=0.99, tau=1e-3, max_memory_size=50000, priority=True, grad_clip=1,
-                 alpha=0.9, beta=0.9):
+    """
+    Custom implementation of the classic DDPG (Deep Deterministic Policy Gradient) algorithm,
+    in order to optimize a continuous actions state based on a reward function. More details can
+    be found https://keras.io/examples/rl/ddpg_pendulum/ or https://stable-baselines3.readthedocs.io/en/master/modules/ddpg.html
+    """
+
+    def __init__(self, num_inputs: int, num_outputs: int, anf: torch.nn.Module, hidden_size: int = 32,
+                 actor_learning_rate: float = 1e-4,
+                 critic_learning_rate: float = 1e-5, gamma: float = 0.99, tau: float = 1e-3,
+                 max_memory_size: int = 50000, priority: bool = True, grad_clip: float = 1,
+                 alpha: Optional[float] = 0.9, beta: Optional[float] = 0.9) -> None:
+        """
+        Initializes the DDPG agent
+
+        :param num_inputs: The dimension size of the input state
+        :param num_outputs: The dimension size of the output of the actor
+        :param anf: The actor, in this case the ANFIS system
+        :param hidden_size: the size of the hidden layer for the CNN
+        :param actor_learning_rate: the actor learning rate for the optimizer
+        :param critic_learning_rate: the critic learning rate for to optimize, should be larger than the actor
+        learning rate to improve stability
+        :param gamma: the discount factor for the previous Q value state
+        :param tau: the soft update coefficient ("Polyak update", between 0 and 1) used for the target network update
+        :param max_memory_size: the number of previous states to keep in memory as possible training samples
+        :param priority: if True use priority experience replay instead of the uniform experience replay sampling method
+        :param grad_clip: Sometimes to improve stability the gradients of the gradients need to be clipped in order to
+        smooth the update function improve stability
+        :param alpha: for the priority experience replay only, how much prioritization is used (0 - no prioritization, 1 - full prioritization)
+        :param beta: for the priority experience replay only, To what degree to use importance weights (0 - no corrections, 1 - full correction)
+        """
         # Params
         super().__init__()
         self.grad_clip = grad_clip
@@ -118,7 +146,15 @@ class DDPGAgent(torch.nn.Module):
         self.compare_models(self.actor, self.actor_target)
         self.compare_models(self.critic, self.critic_target)
 
-    def compare_models(self, model_1, model_2):
+    @staticmethod
+    def compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> int:
+        """
+        Function to compare the parameters between two models to make sure they are the same
+
+        :param model_1: the first model to compare
+        :param model_2: the second model to compare
+        :return: the number of different parameters
+        """
         models_differ = 0
         for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
             if torch.equal(key_item_1[1], key_item_2[1]):
@@ -132,40 +168,74 @@ class DDPGAgent(torch.nn.Module):
         if models_differ == 0:
             print('Models match perfectly! :)')
 
+        return models_differ
+
     @property
-    def train_inputs(self):
+    def train_inputs(self) -> bool:
+        """
+        Gets property for the boolean for enabling and disabling training of the input membership functions
+        :return: The training enabled flag
+        """
         return self._train_inputs
 
     @train_inputs.setter
-    def train_inputs(self, new_val):
+    def train_inputs(self, new_val: bool) -> None:
+        """
+        Sets property for the boolean for enabling and disabling training of the input membership functions
+        :param new_val: Whether the input membership functions should be training or not
+        """
+
         self._train_inputs = new_val
 
         self.actor.train_inputs = new_val
         self.actor_target.train_inputs = new_val
 
     @property
-    def train_velocity(self):
+    def train_velocity(self) -> bool:
+        """
+        Get boolean flag on whether the ANFIS velocity output membership function are getting trained
+        :return: Velocity output membership training flag
+        """
         return self._train_velocity
 
     @train_velocity.setter
-    def train_velocity(self, new_val):
+    def train_velocity(self, new_val: bool) -> None:
+        """
+        Sets the boolean flag on whether the ANFIS velocity output membership function should be training
+        :type new_val: Whether to enable training or not
+        """
+
         self._train_velocity = new_val
 
         self.actor.set_linear_vel_training(new_val)
         self.actor_target.set_linear_vel_training(new_val)
 
     @property
-    def train_angular(self):
+    def train_angular(self) -> bool:
+        """
+        Get boolean flag on whether the ANFIS angular velocity output membership function are getting trained
+        :return: Angular velocity output membership training flag
+        """
         return self._train_angular
 
     @train_angular.setter
-    def train_angular(self, new_val):
+    def train_angular(self, new_val: bool) -> None:
+        """
+        Sets the boolean flag on whether the ANFIS velocity output membership function should be training
+        :type new_val: Whether to enable training or not
+        """
+
         self._train_angular = new_val
 
         self.actor.set_angular_vel_training(new_val)
         self.actor_target.set_angular_vel_training(new_val)
 
-    def save_checkpoint(self, location):
+    def save_checkpoint(self, location: str) -> None:
+        """
+        Save the current DDPG model to a specific location. Saves the current DDPG state dict, actor optimizer,
+        critic optimizer. To a txt file the actor fuzzy membership parameters are also saved.
+        :param location: the location to save the checkpoint
+        """
         state_dicts = {
             'actor': self.state_dict(),
             'actor_optimizer': self.actor_optimizer.state_dict(),
@@ -183,14 +253,26 @@ class DDPGAgent(torch.nn.Module):
 
         torch.save(state_dicts, location)
 
-    def load_checkpoint(self, location):
+    def load_checkpoint(self, location: str) -> None:
+        """
+        Loads the DDPG checkpoint and updates the current state of this DDPG model
+        :param location: the checkpoint location
+        """
         state_dicts = torch.load(location)
 
         self.load_state_dict(state_dicts['actor'])
         self.actor_optimizer.load_state_dict(state_dicts['actor_optimizer'])
         self.critic_optimizer.load_state_dict(state_dicts['critic_optimizer'])
 
-    def get_action(self, state):
+    def get_action(self, state: Sequence[float]) -> Union[float, Tuple[float, float]]:
+        """
+        Runs the anfis using the current state vector to get the ouput of the system
+        :param state: the current state of the system
+        :return: the output from the ANFIS, if velocity is not enabled then a single float will be return otherwise a
+        tuple of floats will be returned
+        """
+
+        # FIXME I do not think requires_grad should be True here
         state = torch.tensor(state, requires_grad=True, dtype=torch.float32).unsqueeze(0)
         #        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
         if self.use_cuda:
@@ -208,7 +290,13 @@ class DDPGAgent(torch.nn.Module):
         else:
             return action[0, 0]
 
-    def update(self, batch_size, summary: SummaryWriter = None):
+    def update(self, batch_size: int, summary: Optional[SummaryWriter] = None) -> None:
+        """
+        Applies backpropagation on the actor and critic networks in order to maximize the expected reward.
+        In depth explanation is located on the DDPG paper: https://arxiv.org/abs/1509.02971
+        :param batch_size: The batch size to sample from the experience memory
+        :param summary: the tensorboard summary writer to add some debugging information such as the loss values
+        """
         if self.priority:
             states, actions, rewards, next_states, _, weights, batch_idxes = self.memory.sample(batch_size)
         else:
@@ -277,7 +365,14 @@ class DDPGAgent(torch.nn.Module):
 
             self.summary_index += 1
 
-    def soft_update(self, target, source):
+    def soft_update(self, target: torch.nn.Module, source: torch.nn.Module) -> None:
+        """
+        Apply Polyak update on the target network, otherwise know as a soft update where the target network is updated
+        linearly with a proportional `tau` with the source network
+
+        :param target: the target network to update
+        :param source: the source network to update towards
+        """
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(
                 target_param.data * (1.0 - self.tau) + param.data * self.tau

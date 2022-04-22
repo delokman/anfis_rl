@@ -1,5 +1,3 @@
-import numpy as np
-
 from anfis.antecedent_layer import dist_target_dist_per_theta_lookahead_theta_far_theta_near, \
     dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 from anfis.consequent_layer import ConsequentLayerType
@@ -11,7 +9,6 @@ from anfis.joint_membership_optimized import JointTrapMembershipV2, JointSingleC
     Joint7TrapMembership
 from anfis.trainer import make_joint_anfis
 from new_ddpg.input_membership import JointTrapMembership
-# from new_ddpg.new_anfis import JointAnfisNet
 from new_ddpg.new_anfis import min_max_num_trapezoids, min_max_num_symmetric_center_of_max, min_max_num_center_of_max, \
     JointAnfisNet
 from new_ddpg.output_membership import SymmetricCenterOfMaximum, CenterOfMaximum
@@ -21,10 +18,7 @@ def predefined_anfis_model():
     parameter_values = [
         [0, 1.40812349319458, .1, 0.699826002120972],
         [0, 0.976657846180786, 0.27020001411438, 0.1281498670578],
-        # [0, 1.12320299803035, 0.081358410418034, 0.103709816932678],
-        [0, 1.52320299803035, 0.081358410418034, 0.103709816932678],  # Old theta near
-        # [0, 4.666666666666667, 0.21428571428571427, 0.21428571428571427],
-        # [0.5395, 0.525, 0.6303, 0.4556]
+        [0, 1.52320299803035, 0.081358410418034, 0.103709816932678],
         [0, 1.8763, 1.9412, 2.1448]
     ]
 
@@ -36,8 +30,6 @@ def predefined_anfis_model():
 
     output_names = ['angular_velocity']
 
-    # mambani = JointSymmetricTriangleMembership(*parameter_values[3], False,
-    #                                            x_joint_definitons[0][1].required_dtype())
     mambani = JointSymmetricTriangleMembership(*parameter_values[3], True,
                                                x_joint_definitons[0][1].required_dtype())
 
@@ -123,25 +115,12 @@ def optimized_many_error_predefined_anfis_model():
 def optimized_many_error_predefined_anfis_model_with_velocity():
     parameter_values = [
         [0.001, 1.],
-
         [0., 2., .1, .2, .2],
         [0., 1., .6, 0.6],
         [0., 1, .25, 0.125],
-        [0., 1.5, 0.1, 0.1],  #
-
+        [0., 1.5, 0.1, 0.1],
         [0., 1., 1., 1., 1.],
-
-        # [0., 3.146184206008911, 7.892924622865394e-05, -0.052046310156583786, 0.19876137375831604],
-        # [0., 1.4081424474716187, 0.3765484690666199, 0.24828855693340302],
-        # [0., 0.9766578674316406, 0.2702000141143799, 0.1281498670578003],
-        # [0., 2.227175235748291, 0.0006221223738975823, 0.004938468802720308],  #
-        #
-        # [0., 1.9652783870697021, 1.919374704360962, 1.4656635522842407, 1.4181907176971436],
-        # [0.0017236630665138364, 1.2268195152282715],
-
-        # [0.2, .8, 1.]
         [0.2, .3, .8]
-        # [0.2, 1, 2.]
     ]
 
     x_joint_definitons = [
