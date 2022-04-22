@@ -1,8 +1,7 @@
+import bezier
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-
-import bezier
 
 
 def z_course(segment_length, start_angle=0, end_angle=180, step_angle=15):

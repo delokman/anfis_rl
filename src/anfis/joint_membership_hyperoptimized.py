@@ -66,7 +66,7 @@ class JointTrapMembershipV3(JointMembershipHyperOptimized):
 
     def __init__(self, center, slope, center_width, side_width, constant_center=False, min_slope=0.01):
         super().__init__()
-        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
+        self.register_buffer("slope_constraint", torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
             self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
@@ -78,7 +78,7 @@ class JointTrapMembershipV3(JointMembershipHyperOptimized):
         self.register_parameter('side_width', _mk_param(side_width, dtype=self.required_dtype()))
 
         self.register_buffer("one", torch.tensor(1, dtype=self.required_dtype()))
-        self.register_buffer("n_one",  torch.tensor(-1, dtype=self.required_dtype()))
+        self.register_buffer("n_one", torch.tensor(-1, dtype=self.required_dtype()))
         self.register_buffer("two", torch.tensor(2, dtype=self.required_dtype()))
 
         # FIXME Lol cheeky way to add backwards compatability
@@ -168,7 +168,7 @@ class JointSingleConstrainedEdgeMembershipV2(JointMembershipHyperOptimized):
 
     def __init__(self, center, slope, constant_center=False, min_slope=0.01):
         super().__init__()
-        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
+        self.register_buffer("slope_constraint", torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
             self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
@@ -225,7 +225,7 @@ class Joint7TrapMembershipV2(JointMembershipHyperOptimized):
     def __init__(self, center, slope, center_width, side_width, super_side_width, constant_center=False,
                  min_slope=0.01):
         super().__init__()
-        self.register_buffer("slope_constraint",  torch.tensor(min_slope, dtype=self.required_dtype()))
+        self.register_buffer("slope_constraint", torch.tensor(min_slope, dtype=self.required_dtype()))
 
         if constant_center:
             self.register_buffer("center", torch.tensor(center, dtype=self.required_dtype(), requires_grad=False))
@@ -238,7 +238,7 @@ class Joint7TrapMembershipV2(JointMembershipHyperOptimized):
         self.register_parameter('super_side_width', _mk_param(super_side_width, dtype=self.required_dtype()))
 
         self.register_buffer("one", torch.tensor(1, dtype=self.required_dtype()))
-        self.register_buffer("n_one",  torch.tensor(-1, dtype=self.required_dtype()))
+        self.register_buffer("n_one", torch.tensor(-1, dtype=self.required_dtype()))
         self.register_buffer("two", torch.tensor(2, dtype=self.required_dtype()))
 
         # FIXME Lol cheeky way to add backwards compatability

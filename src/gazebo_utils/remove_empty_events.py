@@ -59,6 +59,6 @@ for folder_name in directories:
 
     print("Count", counter)
 
-    if (not error and counter < num_data_threshold) or (error and counter <= num_data_threshold * .1) :
+    if (not error and counter < num_data_threshold) or (error and counter <= num_data_threshold * .1):
         shutil.rmtree(path)
         print("REMOVED")

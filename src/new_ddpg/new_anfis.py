@@ -6,11 +6,11 @@ import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from torch import nn, profiler
 
+from new_ddpg import FLOAT_TORCH_TYPE
 from new_ddpg.input_membership import JointTrapMembership, JointMembership
 from new_ddpg.output_membership import CenterOfMaximum, SymmetricCenterOfMaximum
 from rl.predifined_anfis import dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel
 from vizualize.auto_grad_viz import make_dot
-from new_ddpg import FLOAT_TORCH_TYPE
 
 
 class JointAnfisNet(nn.Module):

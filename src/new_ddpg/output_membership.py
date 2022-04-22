@@ -4,9 +4,8 @@ import torch
 from torch import nn
 
 from anfis.joint_membership import _mk_param
-from new_ddpg.input_membership import JointMembership
-
 from new_ddpg import FLOAT_TORCH_TYPE
+from new_ddpg.input_membership import JointMembership
 
 
 class SymmetricCenterOfMaximum(JointMembership):

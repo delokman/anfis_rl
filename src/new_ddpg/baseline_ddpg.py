@@ -7,17 +7,17 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat, Figure
+from stable_baselines3.common.logger import Logger, TensorBoardOutputFormat
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.td3.td3 import TD3
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.summary import hparams
 
 from anfis.utils import plot_model_weights
 from gazebo_utils.test_course import test_course3
 from new_ddpg.jackal_gym import GazeboJackalEnv
 from new_ddpg.policy import TD3Policy
 from rl.utils import Reward
-from torch.utils.tensorboard.summary import hparams
 
 
 def plot_fuzzy_consequent(summary, anfis, epoch):
@@ -68,7 +68,8 @@ def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis, variable_te
 
 def create_env():
     course = test_course3()
-    reward_func = lambda errors, linear_vel, angular_vel, params: ( 1/ (abs(errors[1]) + .25) + 1 / (abs(errors[-1]) + .4), None)
+    reward_func = lambda errors, linear_vel, angular_vel, params: (
+    1 / (abs(errors[1]) + .25) + 1 / (abs(errors[-1]) + .4), None)
     reward_scales = {
         'reward_scale': 15.,
         'DE_penalty_gain': 25 / 1.5,
