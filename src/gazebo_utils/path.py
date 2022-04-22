@@ -93,6 +93,17 @@ class Path:
 
             distance_line = np.linalg.norm(proj - np.array([[pos_x], [pos_y]]), 2)
 
+            # pose = np.array([pos_x, pos_y])
+            #
+            # a = pose - current_point
+            # b = target - current_point
+            #
+            # b_t = np.array([-b[1], b[0]])
+            # b_norm = np.linalg.norm(b)
+            #
+            # proj_len = np.dot(a, b) / b_norm
+            # distance_line = np.dot(a, b_t) / b_norm
+
             temp = self.path_count
 
             if self.path_count == (self.path_length - 1):
