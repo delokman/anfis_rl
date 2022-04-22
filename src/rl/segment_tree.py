@@ -1,4 +1,5 @@
-# THIS CODE WAS TAKEN FROM https://github.com/openai/baselines/blob/master/baselines/common/segment_tree.py ALL CREDIT FOR IT GOES TO THEM
+# THIS CODE WAS TAKEN FROM https://github.com/openai/baselines/blob/master/baselines/common/segment_tree.py
+# ALL CREDIT FOR IT GOES TO THEM
 
 import operator
 
@@ -106,7 +107,7 @@ class SumSegmentTree(SegmentTree):
         """Returns arr[start] + ... + arr[end]"""
         return super(SumSegmentTree, self).reduce(start, end)
 
-    def find_prefixsum_idx(self, prefixsum: int) -> int:
+    def find_prefixsum_idx(self, prefixsum: float) -> int:
         """Find the highest index `i` in the array such that
             sum(arr[0] + arr[1] + ... + arr[i - i]) <= prefixsum
 
@@ -116,7 +117,7 @@ class SumSegmentTree(SegmentTree):
 
         Parameters
         ----------
-        perfixsum: float
+        prefixsum: float
             upperbound on the sum of array prefix
 
         Returns
@@ -128,7 +129,7 @@ class SumSegmentTree(SegmentTree):
         idx = 1
         while idx < self._capacity:  # while non-leaf
             if self._value[2 * idx] > prefixsum:
-                idx = 2 * idx
+                idx *= 2
             else:
                 prefixsum -= self._value[2 * idx]
                 idx = 2 * idx + 1

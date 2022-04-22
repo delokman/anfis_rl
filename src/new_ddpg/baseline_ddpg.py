@@ -69,7 +69,7 @@ def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis, variable_te
 def create_env():
     course = test_course3()
     reward_func = lambda errors, linear_vel, angular_vel, params: (
-    1 / (abs(errors[1]) + .25) + 1 / (abs(errors[-1]) + .4), None)
+        1 / (abs(errors[1]) + .25) + 1 / (abs(errors[-1]) + .4), None)
     reward_scales = {
         'reward_scale': 15.,
         'DE_penalty_gain': 25 / 1.5,

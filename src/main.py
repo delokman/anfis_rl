@@ -67,7 +67,8 @@ def reset_world(is_simulation: bool = False):
     Resets the Gazebo world by calling the /gazebo/reset_world and the /set_pose of the robot and then waits for 2 s
 
     Args:
-        is_simulation (bool): flag to see if this is a simulation environment or not, if it is a simulation environment call the services otherwise just wait 2 second
+        is_simulation (bool): flag to see if this is a simulation environment or not, if it is a simulation environment
+            call the services otherwise just wait 2 second
     """
     if is_simulation:
         call_service('/gazebo/reset_world', Empty, [])
@@ -85,7 +86,8 @@ def plot_anfis_model_data(summary: SummaryWriter, epoch: int, anfis, variable_te
 
 def plot_anfis_data(summary: SummaryWriter, epoch: int, agent: DDPGAgent):
     """
-    Plots the actor's fuzzy consequence layer (the triangle output membership functions), the membership functions (all the input membership trapezoids) as images and then all the associated parameters as scalars
+    Plots the actor's fuzzy consequence layer (the triangle output membership functions), the membership functions
+    (all the input membership trapezoids) as images and then all the associated parameters as scalars
 
     Args:
         summary:  the summary writer to write the output to
@@ -265,7 +267,8 @@ def shutdown(summary: SummaryWriter, agent: DDPGAgent, params: dict, jackal: Jac
              rewards_cummulative: list, checkpoint: LowestCheckpoint, epoch: int, yaw_rates: list, velocities: list,
              reward_components: list, rule_weights: list, train: bool):
     """
-    Function to be called when rospy gets terminated/when the program is stopped. This tries to save the state of the unfinished epoch before closing
+    Function to be called when rospy gets terminated/when the program is stopped. This tries to save the state of the
+    unfinished epoch before closing
 
     Args:
         summary: the summary to write the data
@@ -523,7 +526,8 @@ def epoch(i: int, agent: DDPGAgent, path: Path, summary: SummaryWriter, checkpoi
     #     agent.train_velocity = True
     #     print("velocity training on")
 
-    del jackal, path, distance_errors, theta_far_errors, theta_near_errors, rewards_cummulative, yaw_rates, velocities, reward_components, rule_weights
+    del jackal, path, distance_errors, theta_far_errors, theta_near_errors, rewards_cummulative, yaw_rates, velocities, \
+        reward_components, rule_weights
 
     return dist_error_mae, error
 
@@ -545,7 +549,7 @@ def main():
     validate = False
 
     trial_num = 4
-    for i in range(trial_num):
+    for _ in range(trial_num):
 
         # test_path = test_course()  ####testcoruse MUST start with 0,0 . Check this out
         # test_path = test_course2()  ####testcoruse MUST start with 0,0 . Check this out
@@ -571,10 +575,10 @@ def main():
         summary = SummaryWriter(f'{package_location}/runs/{name}')
         os.mkdir(os.path.join(summary.get_logdir(), 'checkpoints'))
 
-        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
-        #                   actor_learning_rate=1e-4)
-        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3, hidden_size=32,
-        #                   actor_learning_rate=1e-4, priority=False)
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3,
+        #                   hidden_size=32,actor_learning_rate=1e-4)
+        # agent = DDPGAgent(5, 1, optimized_many_error_predefined_anfis_model(), critic_learning_rate=1e-3,
+        #                   hidden_size=32, actor_learning_rate=1e-4, priority=False)
         agent = DDPGAgent(5, 2, optimized_many_error_predefined_anfis_model_with_velocity(), critic_learning_rate=1e-3,
                           hidden_size=32,
                           actor_learning_rate=1e-4, priority=False)

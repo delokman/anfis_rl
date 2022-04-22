@@ -424,7 +424,8 @@ def dist_target_dist_per_theta_lookahead_theta_far_theta_near():
 
 def dist_target_dist_per_theta_lookahead_theta_far_theta_near_with_vel():
     """
-    each rule of index i is assigned an associated linear velocity linguistic variable based on the angular velocity lingistic variable
+    each rule of index i is assigned an associated linear velocity linguistic variable based on the angular velocity
+    linguistic variable
     """
     mamdani_ruleset = dist_target_dist_per_theta_lookahead_theta_far_theta_near()
 

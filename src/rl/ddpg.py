@@ -18,7 +18,8 @@ class DDPGAgent(torch.nn.Module):
     """
     Custom implementation of the classic DDPG (Deep Deterministic Policy Gradient) algorithm,
     in order to optimize a continuous actions state based on a reward function. More details can
-    be found https://keras.io/examples/rl/ddpg_pendulum/ or https://stable-baselines3.readthedocs.io/en/master/modules/ddpg.html
+    be found https://keras.io/examples/rl/ddpg_pendulum/ or
+    https://stable-baselines3.readthedocs.io/en/master/modules/ddpg.html
     """
 
     def __init__(self, num_inputs: int, num_outputs: int, anf: torch.nn.Module, hidden_size: int = 32,
@@ -34,16 +35,18 @@ class DDPGAgent(torch.nn.Module):
         :param anf: The actor, in this case the ANFIS system
         :param hidden_size: the size of the hidden layer for the CNN
         :param actor_learning_rate: the actor learning rate for the optimizer
-        :param critic_learning_rate: the critic learning rate for to optimize, should be larger than the actor
-        learning rate to improve stability
+        :param critic_learning_rate: the critic learning rate for to optimize, should be larger than the actor learning
+            rate to improve stability
         :param gamma: the discount factor for the previous Q value state
         :param tau: the soft update coefficient ("Polyak update", between 0 and 1) used for the target network update
         :param max_memory_size: the number of previous states to keep in memory as possible training samples
         :param priority: if True use priority experience replay instead of the uniform experience replay sampling method
         :param grad_clip: Sometimes to improve stability the gradients of the gradients need to be clipped in order to
-        smooth the update function improve stability
-        :param alpha: for the priority experience replay only, how much prioritization is used (0 - no prioritization, 1 - full prioritization)
-        :param beta: for the priority experience replay only, To what degree to use importance weights (0 - no corrections, 1 - full correction)
+            smooth the update function improve stability
+        :param alpha: for the priority experience replay only, how much prioritization is used
+            (0 - no prioritization, 1 - full prioritization)
+        :param beta: for the priority experience replay only, To what degree to use importance weights
+            (0 - no corrections, 1 - full correction)
         """
         # Params
         super().__init__()
@@ -161,7 +164,7 @@ class DDPGAgent(torch.nn.Module):
                 pass
             else:
                 models_differ += 1
-                if (key_item_1[0] == key_item_2[0]):
+                if key_item_1[0] == key_item_2[0]:
                     print('Mismtach found at', key_item_1[0])
                 else:
                     raise Exception

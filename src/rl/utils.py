@@ -154,7 +154,7 @@ def reward2(errors, linear_vel, angular_vel, params):
     if target_discount < 0:
         target_discount = 0
 
-    theta_lookahead_error = 1 - (abs(theta_lookahead) / np.pi) ** (0.5)
+    theta_lookahead_error = 1 - (abs(theta_lookahead) / np.pi) ** 0.5
 
     angle_forward_total = theta_lookahead_error * target_discount
 
@@ -233,7 +233,8 @@ class Reward:
         distance_reward = np.exp(-0.5 * abs(normalized_distance) ** 2 / sigma ** 2)
 
         distance_reduction_bonus = 1
-        if self.prev_normalized_distance_from_route is not None and self.prev_normalized_distance_from_route > normalized_distance:
+        if self.prev_normalized_distance_from_route is not None and \
+                self.prev_normalized_distance_from_route > normalized_distance:
             distance_reduction_bonus = min(abs(self.prev_normalized_distance_from_route / normalized_distance), 2)
 
         # HEADING
@@ -282,7 +283,7 @@ class Reward:
             IC = 1e-3
 
         # LC = (curve_bonus + intermediate_progress_bonus + heading_decrease_bonus)
-        LC = (heading_decrease_bonus)
+        LC = heading_decrease_bonus
 
         self.prev_speed = linear_vel
         self.prev_direction_diff = theta_near

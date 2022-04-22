@@ -87,7 +87,8 @@ class GazeboJackalEnv(GazeboEnv):
         self.path = Path(path)
 
         self.vel_pub = rospy.Publisher(f'/{self.namespace}/jackal_velocity_controller/cmd_vel', Twist, queue_size=5)
-        # self.odometry = rospy.Subscriber(f'/{self.namespace}/odometry/local_filtered', Odometry, self.odometry_callback,queue_size=1)
+        # self.odometry = rospy.Subscriber(f'/{self.namespace}/odometry/local_filtered', Odometry,
+        #                                  self.odometry_callback,queue_size=1)
         self.odometry = rospy.Subscriber(f'/gazebo/model_states', ModelStates, self.odometry_callback, queue_size=1)
 
         self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
@@ -157,7 +158,7 @@ class GazeboJackalEnv(GazeboEnv):
             rospy.wait_for_service('/gazebo/unpause_physics')
             try:
                 self.unpause()
-            except (rospy.ServiceException) as e:
+            except rospy.ServiceException as e:
                 print("/gazebo/unpause_physics service call failed")
         GazeboJackalEnv.RUNNING = True
 
@@ -201,7 +202,7 @@ class GazeboJackalEnv(GazeboEnv):
         try:
             # reset_proxy.call()
             self.reset_proxy()
-        except (rospy.ServiceException) as e:
+        except rospy.ServiceException as e:
             print("/gazebo/reset_world service call failed")
 
         # Resets the state of the environment and returns an initial observation.
@@ -217,7 +218,7 @@ class GazeboJackalEnv(GazeboEnv):
         try:
             # resp_pause = pause.call()
             self.unpause()
-        except (rospy.ServiceException) as e:
+        except rospy.ServiceException as e:
             print("/gazebo/unpause_physics service call failed")
 
         print("RESET Complete")
@@ -239,7 +240,7 @@ class GazeboJackalEnv(GazeboEnv):
         try:
             # resp_pause = pause.call()
             self.pause()
-        except (rospy.ServiceException) as e:
+        except rospy.ServiceException as e:
             print("/gazebo/pause_physics service call failed")
 
         self.stop = False

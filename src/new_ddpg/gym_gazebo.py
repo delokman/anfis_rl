@@ -74,12 +74,15 @@ class GazeboEnv(gym.Env):
             environ = {'ROS_DISTRO': 'melodic',
                        'ROS_PACKAGE_PATH': '/home/auvsl/catkin_ws/src:/opt/ros/melodic/share',
                        'HOME': '/home/auvsl',
-                       'PATH': '/home/auvsl/catkin_ws/devel/bin:/opt/ros/melodic/bin:/home/auvsl/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin',
+                       'PATH': '/home/auvsl/catkin_ws/devel/bin:/opt/ros/melodic/bin:/home/auvsl/.local/bin:'
+                               '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:'
+                               '/usr/local/games:/snap/bin',
                        'CMAKE_PREFIX_PATH': '/home/auvsl/catkin_ws/devel:/opt/ros/melodic', 'DISPLAY': ':0',
                        'SHELL': '/bin/bash',
                        'LD_LIBRARY_PATH': '/home/auvsl/catkin_ws/devel/lib:/opt/ros/melodic/lib',
                        'ROS_PYTHON_VERSION': '2', 'USERNAME': 'auvsl',
-                       'PYTHONPATH': '/home/auvsl/catkin_ws/devel/lib/python2.7/dist-packages:/opt/ros/melodic/lib/python2.7/dist-packages',
+                       'PYTHONPATH': '/home/auvsl/catkin_ws/devel/lib/python2.7/dist-packages:/opt/ros/melodic/lib'
+                                     '/python2.7/dist-packages',
                        'ROS_ROOT': '/home/auvsl/catkin_ws/src/ros/core/rosbuild',
                        '_': '/usr/bin/python',
                        'ROSLISP_PACKAGE_DIRECTORIES': '/home/auvsl/catkin_ws/devel/share/common-lisp',

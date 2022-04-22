@@ -76,10 +76,10 @@ def make_dot(var, params, parameter_values=None):
     >>> g = make_dot(policy_loss, dict(model.named_parameters()))
     >>> g.view()
 
-    Args:
-        var: output Variable
-        params: dict of (name, Variable) to add names to node that
+    :param var: output Variable
+    :param params: dict of (name, Variable) to add names to node that
             require grad (TODO: make optional)
+    :param parameter_values: the gradient values associated with each parameter, need to call .backwards() before
     """
     param_map = {id(v): k for k, v in params.items()}
     # print(param_map)

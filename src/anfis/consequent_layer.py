@@ -242,7 +242,8 @@ class SymmetricWeightsConsequentLayer(AbstractConsequentLayer):
 
         # mask = torch.greater_equal(summ, c.mean() - 3 * c.std())
 
-        # TODO maybe make it so that instead of removing everything at oncee, remove the elements one after the after after randomly
+        # TODO maybe make it so that instead of removing everything at oncee, remove the elements one after the after
+        #  after randomly
         mask = torch.greater_equal(self.coeff.abs().sum(dim=2), 1e-9).view(-1)
 
         assert not torch.all(~mask), "Error, all the coefficients have been removed, nothing has trained"
@@ -327,7 +328,8 @@ class MamdaniConsequentLayer(torch.nn.Module):
         # FIXME make it work for multiple outputs
         # output = list(self.mamdani_defs[membership_id[0]] for membership_id in self.output_membership_mapping)
 
-        # data = torch.stack([torch.stack([self.mamdani_defs[var] for var in membership_id]) for membership_id in self.output_membership_mapping]).transpose(0,1)
+        # data = torch.stack([torch.stack([self.mamdani_defs[var] for var in membership_id]) for membership_id in
+        #                     self.output_membership_mapping]).transpose(0, 1)
 
         # ordered_dict = OrderedDict()
 

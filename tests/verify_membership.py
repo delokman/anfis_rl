@@ -3,7 +3,6 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from anfis.joint_membership_hyperoptimized import JointTrapMembershipV3, JointSingleConstrainedEdgeMembershipV2, \
     Joint7TrapMembershipV2

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from gazebo_utils.new_test_courses import random_points
@@ -5,7 +7,8 @@ from gazebo_utils.new_test_courses import random_points
 
 def extend_path(path: list):
     """
-    In order to fix angle errors and index out of bounds, the path is extended by a single segment which is in the same angle as the last segment
+    In order to fix angle errors and index out of bounds, the path is extended by a single segment which is in the same
+    angle as the last segment
 
     Args:
         path: The path to extend
@@ -29,7 +32,8 @@ class Path:
 
         self.estimated_path_length = self.calcualte_estimated_path_length()
 
-        self.transform = None
+        self.transform: Optional[np.ndarray] = None
+        self.inverse_transform: Optional[np.ndarray] = None
 
     def reset(self):
         self.stop = False
@@ -91,7 +95,7 @@ class Path:
 
             temp = self.path_count
 
-            if (self.path_count == (self.path_length - 1)):
+            if self.path_count == (self.path_length - 1):
                 curr = np.array(self.path[self.path_count])
                 tar = np.array(self.path[self.path_count + 1])
                 future = np.array(self.path[self.path_count + 1])

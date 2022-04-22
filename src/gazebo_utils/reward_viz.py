@@ -16,7 +16,7 @@ def reward_new(errors, linear_vel, angular_vel, params):
     max_vel = 2
 
     target_discount = 1 - (target / min_radius) ** 0.5
-    theta_lookahead_error = 1 - (abs(theta_lookahead) / np.pi) ** (0.5)
+    theta_lookahead_error = 1 - (abs(theta_lookahead) / np.pi) ** 0.5
 
     if target_discount < 0:
         target_discount = 0

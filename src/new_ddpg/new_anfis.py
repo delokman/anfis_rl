@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -48,6 +48,12 @@ class JointAnfisNet(nn.Module):
         input_rules, output_rules = self.convert_rules(mamdani_ruleset)
         self.register_buffer("input_rules", input_rules)
         self.register_buffer("output_rules", output_rules)
+
+        self.fuzzied: Optional[torch.Tensor] = None
+        self.weights: Optional[torch.Tensor] = None
+        self.defuzzify_out: Optional[torch.Tensor] = None
+        self.output_weights: Optional[torch.Tensor] = None
+        self.contrained: Optional[torch.Tensor] = None
 
     def fuzzify(self, x):
         output = []
@@ -328,7 +334,7 @@ def profile():
 def min_max_num_trapezoids(min_v, max_v, num):
     c = (min_v + max_v) / 2
 
-    num = num - 1
+    num -= 1
 
     num = np.full(num, (max_v - c) / num)
     num[0] /= 2

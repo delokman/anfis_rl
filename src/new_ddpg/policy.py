@@ -60,6 +60,8 @@ class TD3Policy(BasePolicy):
             squash_output=True,
         )
 
+        self.training = self.critic.training
+
         # Default network architecture, from the original paper
         if net_arch is None:
             if features_extractor_class == NatureCNN:

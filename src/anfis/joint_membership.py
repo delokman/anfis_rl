@@ -44,7 +44,7 @@ class BellMembFunc(torch.nn.Module):
 
     def forward(self, x):
         dist = torch.pow((x - self.c) / self.a, 2)
-        return torch.reciprocal(1 + torch.pow(dist, self.b))
+        return torch.reciprocal(torch.add(torch.pow(dist, self.b), 1))
 
     def pretty(self):
         return 'BellMembFunc {} {} {}'.format(self.a, self.b, self.c)
@@ -70,7 +70,7 @@ class BellMembFunc2(BellMembFunc):
             c = self.c - self.c2
 
         dist = torch.pow((x - c) / self.a, 2)
-        return torch.reciprocal(1 + torch.pow(dist, self.b))
+        return torch.reciprocal(torch.add(torch.pow(dist, self.b),1))
 
     def pretty(self):
         return 'BellMembFunc {} {} {} {}'.format(self.a, self.b, self.c, self.c2)
@@ -113,7 +113,7 @@ class JointExprMembFunc(torch.nn.Module):
         else:
             c = x - self.c1 + self.c2 + self.c3
         dist = c / self.a
-        return torch.reciprocal(1 + torch.exp(dist))
+        return torch.reciprocal(torch.add(torch.exp(dist),1))
 
     def pretty(self):
         return 'ExprMembFunc {} {} {} {}'.format(self.a, self.c1, self.c2, self.c3)
@@ -490,7 +490,7 @@ class JointDiffSigmoidEdgeMembFunc(torch.nn.Module):
         # Fixed overflow by setting x to be a float64
         exp = torch.exp(-s * (self.dir * (x.double() - self.c) - (center_width / 2 + side_width)))
 
-        return torch.reciprocal(1 + exp).float()
+        return torch.reciprocal(torch.add(exp,1)).float()
 
     def pretty(self):
         return 'SigmoidMembFunc {} {} {}'.format(self.center, self.slope, self.center_width)

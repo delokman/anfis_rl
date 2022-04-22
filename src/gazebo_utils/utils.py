@@ -94,7 +94,8 @@ class DoNothing:
 def reward_function_grid_visualization(variable_ranges: List[np.ndarray], variable_names: List[str],
                                        reward_function: Callable[..., float], res: int = 50) -> Tuple[Figure, Figure]:
     """
-    Implemented function to visualize the reward output of each of the variables, related with each other as contour plots
+    Implemented function to visualize the reward output of each of the variables,
+    related with each other as contour plots
 
     Example:
     

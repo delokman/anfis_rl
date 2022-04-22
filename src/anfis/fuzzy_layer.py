@@ -18,7 +18,7 @@ class JointFuzzifyLayer(torch.nn.Module):
         maxmfs = max([var.num_mfs for var in varmfs])
         for var in varmfs:
             var.pad_to(maxmfs)
-        self.varmfs = torch.nn.ModuleDict(zip(self.varnames, varmfs))
+        self.varmfs = torch.nn.ModuleDict(dict(zip(self.varnames, varmfs)))
 
     @property
     def num_in(self):
